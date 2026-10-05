@@ -1,0 +1,12 @@
+target/
+.build-tools/
+.idea/
+.vscode/
+*.iml
+*.log
+.env
+uploads/
+!.mvn/wrapper/maven-wrapper.jar
+/*.docx
+/create_*_docx.ps1
+/.github/modernize/
