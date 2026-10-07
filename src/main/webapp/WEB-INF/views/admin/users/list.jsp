@@ -6,8 +6,8 @@
     <div><h1>Quản lý tài khoản</h1><p>Tạo tài khoản và phân quyền người dùng.</p></div>
     <a class="button primary" href="<c:url value='/admin/users/new'/>">Thêm tài khoản</a>
 </div>
-<div class="table-wrap">
-<table>
+<div class="table-wrap" role="region" aria-label="Danh sách tài khoản" tabindex="0">
+<table aria-label="Danh sách tài khoản">
     <thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Bộ môn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
     <tbody>
     <c:forEach items="${users}" var="user">
@@ -27,7 +27,7 @@
             </td>
         </tr>
     </c:forEach>
-    <c:if test="${empty users}"><tr><td colspan="7" class="empty">Chưa có tài khoản.</td></tr></c:if>
+    <c:if test="${empty users}"><tr><td colspan="7" class="empty">Chưa có tài khoản. Chọn “Thêm tài khoản” để tạo người dùng đầu tiên.</td></tr></c:if>
     </tbody>
 </table>
 </div>

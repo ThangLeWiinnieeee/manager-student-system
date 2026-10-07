@@ -6,8 +6,8 @@
     <div><h1>Quản lý bộ môn</h1><p>Danh mục bộ môn dùng khi quản lý giảng viên và đề tài.</p></div>
     <a class="button primary" href="<c:url value='/admin/departments/new'/>">Thêm bộ môn</a>
 </div>
-<div class="table-wrap">
-<table>
+<div class="table-wrap" role="region" aria-label="Danh sách bộ môn" tabindex="0">
+<table aria-label="Danh sách bộ môn">
     <thead><tr><th>Mã</th><th>Tên bộ môn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
     <tbody>
     <c:forEach items="${departments}" var="department">
@@ -24,7 +24,7 @@
             </td>
         </tr>
     </c:forEach>
-    <c:if test="${empty departments}"><tr><td colspan="4" class="empty">Chưa có bộ môn.</td></tr></c:if>
+    <c:if test="${empty departments}"><tr><td colspan="4" class="empty">Chưa có bộ môn. Chọn “Thêm bộ môn” để tạo đơn vị chuyên môn đầu tiên.</td></tr></c:if>
     </tbody>
 </table>
 </div>
