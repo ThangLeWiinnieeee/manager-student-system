@@ -7,8 +7,10 @@
     <c:otherwise><c:url var="formAction" value="/admin/users"/></c:otherwise>
 </c:choose>
 <%@ include file="../../common/header.jsp" %>
-<h1>${editing ? 'Sửa tài khoản' : 'Thêm tài khoản'}</h1>
+<div class="page-heading"><div><h1>${editing ? 'Sửa tài khoản' : 'Thêm tài khoản'}</h1><p>Cập nhật thông tin, vai trò và quyền truy cập hệ thống.</p></div><a class="button" href="<c:url value='/admin/users'/>">Về danh sách</a></div>
 <form:form modelAttribute="userForm" method="post" action="${formAction}" cssClass="form-card">
+    <h2>Thông tin tài khoản</h2>
+    <p class="form-intro">Điền thông tin người dùng và chọn vai trò phù hợp. Bộ môn là tùy chọn.</p>
     <form:errors path="*" cssClass="alert error" element="div"/>
     <div class="form-grid">
         <div><form:label path="username">Tên đăng nhập</form:label><form:input path="username" maxlength="50" required="required"/><form:errors path="username" cssClass="field-error"/></div>
@@ -19,6 +21,6 @@
         <div><form:label path="departmentId">Bộ môn</form:label><form:select path="departmentId"><form:option value="" label="-- Không chọn --"/><form:options items="${departments}" itemValue="id" itemLabel="name"/></form:select></div>
     </div>
     <label class="checkbox"><form:checkbox path="enabled"/> Tài khoản hoạt động</label>
-    <div class="form-actions"><button class="primary" type="submit">Lưu</button><a class="button" href="<c:url value='/admin/users'/>">Hủy</a></div>
+    <div class="form-actions"><button class="primary" type="submit">Lưu tài khoản</button><a class="button" href="<c:url value='/admin/users'/>">Hủy</a></div>
 </form:form>
 <%@ include file="../../common/footer.jsp" %>
