@@ -5,11 +5,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
-    Optional<UserAccount> findByUsernameIgnoreCase(String username);
-    List<UserAccount> findAllByOrderByUsernameAsc();
-    boolean existsByUsernameIgnoreCase(String username);
+    Optional<UserAccount> findByEmailIgnoreCase(String email);
+    List<UserAccount> findAllByOrderByFullNameAsc();
     boolean existsByEmailIgnoreCase(String email);
-    boolean existsByUsernameIgnoreCaseAndIdNot(String username, Long id);
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
     boolean existsByDepartmentId(Long departmentId);
 }

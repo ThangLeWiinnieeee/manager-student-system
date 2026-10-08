@@ -17,12 +17,12 @@
     <div class="login-emblem" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg></div>
     <h1>Đăng nhập</h1>
     <p>Truy cập không gian quản lý đề tài của bạn.</p>
-    <c:if test="${param.error != null}"><div class="alert error" role="alert">Không thể đăng nhập. Kiểm tra tên đăng nhập, mật khẩu hoặc liên hệ khoa nếu tài khoản bị khóa.</div></c:if>
+    <c:if test="${param.error != null}"><div class="alert error" role="alert">Không thể đăng nhập. Kiểm tra email, mật khẩu hoặc liên hệ khoa nếu tài khoản bị khóa.</div></c:if>
     <c:if test="${param.logout != null}"><div class="alert success" role="status">Bạn đã đăng xuất thành công.</div></c:if>
     <form action="<c:url value='/login'/>" method="post">
         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
-        <label for="username">Tên đăng nhập</label>
-        <input id="username" name="username" type="text" autocomplete="username" placeholder="Nhập tên đăng nhập" required autofocus>
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="Nhập địa chỉ email" required autofocus>
         <label for="password">Mật khẩu</label>
         <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required>
         <button type="submit" class="primary full">Đăng nhập</button>

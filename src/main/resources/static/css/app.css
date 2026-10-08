@@ -60,6 +60,7 @@ td:first-child { font-weight: 600; }
 .error { background: #fbeeee; color: #a13c3c; }
 .form-card { max-width: 920px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 30px; }
 .form-card.narrow { max-width: 620px; }
+.form-card + .form-card { margin-top: 28px; }
 .form-intro { color: var(--muted); margin: 0 0 26px; font-size: 14px; }
 .form-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; row-gap: 8px; }
 label { display: block; font-size: 13px; font-weight: 600; margin: 0 0 9px; }

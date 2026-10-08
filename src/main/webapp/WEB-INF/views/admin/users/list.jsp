@@ -8,11 +8,10 @@
 </div>
 <div class="table-wrap" role="region" aria-label="Danh sách tài khoản" tabindex="0">
 <table aria-label="Danh sách tài khoản">
-    <thead><tr><th>Tên đăng nhập</th><th>Họ tên</th><th>Email</th><th>Vai trò</th><th>Bộ môn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+    <thead><tr><th>Họ tên</th><th>Email đăng nhập</th><th>Vai trò</th><th>Bộ môn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
     <tbody>
     <c:forEach items="${users}" var="user">
         <tr>
-            <td><c:out value="${user.username}"/></td>
             <td><c:out value="${user.fullName}"/></td>
             <td><c:out value="${user.email}"/></td>
             <td><c:out value="${user.role.displayName}"/></td>
@@ -27,7 +26,7 @@
             </td>
         </tr>
     </c:forEach>
-    <c:if test="${empty users}"><tr><td colspan="7" class="empty">Chưa có tài khoản. Chọn “Thêm tài khoản” để tạo người dùng đầu tiên.</td></tr></c:if>
+    <c:if test="${empty users}"><tr><td colspan="6" class="empty">Chưa có tài khoản. Chọn “Thêm tài khoản” để tạo người dùng đầu tiên.</td></tr></c:if>
     </tbody>
 </table>
 </div>

@@ -5,12 +5,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import vn.edu.fit.topicmanagement.user.UserAccountRepository;
+import vn.edu.fit.topicmanagement.auth.AuthenticatedUser;
 
 @Configuration
 @EnableMethodSecurity
@@ -23,12 +23,8 @@ public class SecurityConfig {
 
     @Bean
     UserDetailsService userDetailsService(UserAccountRepository users) {
-        return username -> users.findByUsernameIgnoreCase(username)
-                .map(account -> User.withUsername(account.getUsername())
-                        .password(account.getPasswordHash())
-                        .roles(account.getRole().name())
-                        .disabled(!account.isEnabled())
-                        .build())
+        return email -> users.findByEmailIgnoreCase(email.trim())
+                .map(AuthenticatedUser::new)
                 .orElseThrow(() -> new org.springframework.security.core.userdetails.UsernameNotFoundException(
                         "Không tìm thấy tài khoản"));
     }
@@ -43,6 +39,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")
+                        .usernameParameter("email")
                         .defaultSuccessUrl("/", true)
                         .failureUrl("/login?error")
                         .permitAll())
