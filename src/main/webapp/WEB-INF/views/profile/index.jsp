@@ -9,9 +9,8 @@
 <h2>Thông tin tài khoản</h2>
 <p>Liên hệ quản trị viên nếu cần cập nhật thông tin.</p>
 <dl class="profile">
-    <dt>Tên đăng nhập</dt><dd><c:out value="${account.username}"/></dd>
     <dt>Họ tên</dt><dd><c:out value="${account.fullName}"/></dd>
-    <dt>Email</dt><dd><c:out value="${account.email}"/></dd>
+    <dt>Email đăng nhập</dt><dd><c:out value="${account.email}"/></dd>
     <dt>Vai trò</dt><dd><c:out value="${account.role.displayName}"/></dd>
     <dt>Bộ môn</dt><dd><c:out value="${empty account.department ? '-' : account.department.name}"/></dd>
 </dl>

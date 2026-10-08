@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler(IllegalArgumentException.class)
+    @ExceptionHandler(ResourceNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    String notFound(IllegalArgumentException exception, Model model) {
+    String notFound(ResourceNotFoundException exception, Model model) {
         model.addAttribute("message", exception.getMessage());
         return "error/404";
     }

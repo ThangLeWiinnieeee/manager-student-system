@@ -43,7 +43,7 @@ Yêu cầu: Java 21, Maven 3.6.3+ và PostgreSQL.
    $env:DB_URL="jdbc:postgresql://localhost:5432/student_topic_management"
    $env:DB_USERNAME="postgres"
    $env:DB_PASSWORD="postgres"
-   $env:ADMIN_USERNAME="admin"
+   $env:ADMIN_EMAIL="admin@fit.edu.vn"
    $env:ADMIN_PASSWORD="ChangeThisPassword123!"
    ```
 
@@ -53,7 +53,7 @@ Yêu cầu: Java 21, Maven 3.6.3+ và PostgreSQL.
    mvn spring-boot:run
    ```
 
-4. Mở `http://localhost:8080` và đăng nhập bằng tài khoản quản trị vừa cấu hình.
+4. Mở `http://localhost:8080` và đăng nhập bằng email quản trị vừa cấu hình.
 
 Có thể build hoàn toàn bằng Docker nếu máy chưa có Java 21/Maven:
 

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 
 @Controller
 @RequestMapping("/profile")
@@ -22,7 +23,7 @@ public class ProfileController {
 
     @GetMapping
     String profile(Authentication authentication, Model model) {
-        model.addAttribute("account", accounts.getByUsername(authentication.getName()));
+        model.addAttribute("account", accounts.getByEmail(authentication.getName()));
         model.addAttribute("changePasswordForm", new ChangePasswordForm());
         return "profile/index";
     }
@@ -39,11 +40,11 @@ public class ProfileController {
                 accounts.changePassword(authentication.getName(), changePasswordForm);
                 redirectAttributes.addFlashAttribute("success", "Đã đổi mật khẩu");
                 return "redirect:/profile";
-            } catch (IllegalArgumentException ex) {
+            } catch (BusinessRuleException ex) {
                 bindingResult.reject("password.invalid", ex.getMessage());
             }
         }
-        model.addAttribute("account", accounts.getByUsername(authentication.getName()));
+        model.addAttribute("account", accounts.getByEmail(authentication.getName()));
         return "profile/index";
     }
 }

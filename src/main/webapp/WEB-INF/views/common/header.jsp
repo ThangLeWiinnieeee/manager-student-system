@@ -34,7 +34,7 @@
 <div class="workspace">
 <header class="topbar">
     <div class="breadcrumb"><a href="<c:url value='/'/>">Không gian làm việc</a><span>/</span><c:out value="${pageTitle}"/></div>
-    <a class="account-link" href="<c:url value='/profile'/>"><span class="avatar" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><c:out value="${pageContext.request.userPrincipal.name}"/></a>
+    <a class="account-link" href="<c:url value='/profile'/>"><span class="avatar" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><c:out value="${pageContext.request.userPrincipal.principal.fullName}"/></a>
 </header>
 <main class="container" id="main-content">
     <c:if test="${not empty success}"><div class="alert success" role="status"><c:out value="${success}"/></div></c:if>

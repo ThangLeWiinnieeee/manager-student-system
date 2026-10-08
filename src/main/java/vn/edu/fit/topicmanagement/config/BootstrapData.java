@@ -16,20 +16,19 @@ public class BootstrapData {
     CommandLineRunner createInitialAdmin(
             UserAccountRepository users,
             PasswordEncoder passwordEncoder,
-            @Value("${app.bootstrap.admin-username}") String username,
+            @Value("${app.bootstrap.admin-email}") String email,
             @Value("${app.bootstrap.admin-password}") String password) {
         return args -> {
-            if (password.isBlank() || users.existsByUsernameIgnoreCase(username)) {
+            if (password.isBlank() || users.existsByEmailIgnoreCase(email)) {
                 return;
             }
             if (password.length() < 8 || password.length() > 72) {
                 throw new IllegalStateException("ADMIN_PASSWORD phải từ 8 đến 72 ký tự");
             }
             UserAccount admin = new UserAccount();
-            admin.setUsername(username.trim().toLowerCase());
             admin.setPasswordHash(passwordEncoder.encode(password));
             admin.setFullName("Quản trị hệ thống");
-            admin.setEmail(username.trim().toLowerCase() + "@local.invalid");
+            admin.setEmail(email.trim().toLowerCase());
             admin.setRole(Role.ADMIN);
             admin.setEnabled(true);
             users.save(admin);

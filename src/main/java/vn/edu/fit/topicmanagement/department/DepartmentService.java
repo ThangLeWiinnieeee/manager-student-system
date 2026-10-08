@@ -4,6 +4,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fit.topicmanagement.user.UserAccountRepository;
+import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
+import vn.edu.fit.topicmanagement.common.exception.ResourceNotFoundException;
 
 @Service
 @Transactional
@@ -29,17 +31,17 @@ public class DepartmentService {
     @Transactional(readOnly = true)
     public Department get(Long id) {
         return departments.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy bộ môn"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy bộ môn"));
     }
 
     public Department create(DepartmentForm form) {
         String code = normalizeCode(form.getCode());
         String name = form.getName().trim();
         if (departments.existsByCodeIgnoreCase(code)) {
-            throw new IllegalArgumentException("Mã bộ môn đã tồn tại");
+            throw new BusinessRuleException("Mã bộ môn đã tồn tại");
         }
         if (departments.existsByNameIgnoreCase(name)) {
-            throw new IllegalArgumentException("Tên bộ môn đã tồn tại");
+            throw new BusinessRuleException("Tên bộ môn đã tồn tại");
         }
         Department department = new Department();
         apply(department, form, code, name);
@@ -51,19 +53,28 @@ public class DepartmentService {
         String code = normalizeCode(form.getCode());
         String name = form.getName().trim();
         if (departments.existsByCodeIgnoreCaseAndIdNot(code, id)) {
-            throw new IllegalArgumentException("Mã bộ môn đã tồn tại");
+            throw new BusinessRuleException("Mã bộ môn đã tồn tại");
         }
         if (departments.existsByNameIgnoreCaseAndIdNot(name, id)) {
-            throw new IllegalArgumentException("Tên bộ môn đã tồn tại");
+            throw new BusinessRuleException("Tên bộ môn đã tồn tại");
         }
         apply(department, form, code, name);
         return department;
     }
 
+    @Transactional(readOnly = true)
+    public DepartmentForm toForm(Department department) {
+        DepartmentForm form = new DepartmentForm();
+        form.setCode(department.getCode());
+        form.setName(department.getName());
+        form.setEnabled(department.isEnabled());
+        return form;
+    }
+
     public void toggle(Long id) {
         Department department = get(id);
         if (department.isEnabled() && users.existsByDepartmentId(id)) {
-            throw new IllegalArgumentException("Không thể khóa bộ môn đang có người dùng");
+            throw new BusinessRuleException("Không thể khóa bộ môn đang có người dùng");
         }
         department.setEnabled(!department.isEnabled());
     }

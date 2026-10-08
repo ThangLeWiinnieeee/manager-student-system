@@ -3,7 +3,7 @@
 <c:set var="pageTitle" value="Tổng quan"/>
 <%@ include file="common/header.jsp" %>
 <div class="page-heading">
-    <div><h1>Tổng quan</h1><p>Xin chào <c:out value="${username}"/>, đây là không gian làm việc của bạn.</p></div>
+    <div><h1>Tổng quan</h1><p>Xin chào <c:out value="${fullName}"/>, đây là không gian làm việc của bạn.</p></div>
     <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')}">
         <a class="button primary" href="<c:url value='/admin/users/new'/>"><span aria-hidden="true">+</span> Thêm tài khoản</a>
     </c:if>

@@ -4,24 +4,22 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import vn.edu.fit.topicmanagement.department.DepartmentRepository;
-import vn.edu.fit.topicmanagement.user.UserAccountRepository;
+import vn.edu.fit.topicmanagement.auth.AuthenticatedUser;
 
 @Controller
 public class HomeController {
-    private final UserAccountRepository users;
-    private final DepartmentRepository departments;
+    private final DashboardService dashboard;
 
-    public HomeController(UserAccountRepository users, DepartmentRepository departments) {
-        this.users = users;
-        this.departments = departments;
+    public HomeController(DashboardService dashboard) {
+        this.dashboard = dashboard;
     }
 
     @GetMapping("/")
     String dashboard(Authentication authentication, Model model) {
-        model.addAttribute("username", authentication.getName());
-        model.addAttribute("userCount", users.count());
-        model.addAttribute("departmentCount", departments.count());
+        model.addAttribute("fullName", ((AuthenticatedUser) authentication.getPrincipal()).getFullName());
+        DashboardService.Summary summary = dashboard.getSummary();
+        model.addAttribute("userCount", summary.userCount());
+        model.addAttribute("departmentCount", summary.departmentCount());
         return "home";
     }
 }

@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.PrePersist;
 import java.time.Instant;
 
 @Entity
@@ -25,7 +26,7 @@ public class Department {
     private boolean enabled = true;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
+    private Instant createdAt;
 
     public Long getId() { return id; }
     public String getCode() { return code; }
@@ -35,4 +36,11 @@ public class Department {
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public Instant getCreatedAt() { return createdAt; }
+
+    @PrePersist
+    void initializeCreatedAt() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
 }

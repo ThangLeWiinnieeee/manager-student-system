@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 
 @Controller
 @RequestMapping("/admin/departments")
@@ -46,7 +47,7 @@ public class DepartmentController {
                 departments.create(departmentForm);
                 redirectAttributes.addFlashAttribute("success", "Đã tạo bộ môn");
                 return "redirect:/admin/departments";
-            } catch (IllegalArgumentException ex) {
+            } catch (BusinessRuleException ex) {
                 bindingResult.reject("department.invalid", ex.getMessage());
             }
         }
@@ -57,11 +58,7 @@ public class DepartmentController {
     @GetMapping("/{id}/edit")
     String editForm(@PathVariable Long id, Model model) {
         Department department = departments.get(id);
-        DepartmentForm form = new DepartmentForm();
-        form.setCode(department.getCode());
-        form.setName(department.getName());
-        form.setEnabled(department.isEnabled());
-        model.addAttribute("departmentForm", form);
+        model.addAttribute("departmentForm", departments.toForm(department));
         model.addAttribute("editing", true);
         model.addAttribute("departmentId", id);
         return "admin/departments/form";
@@ -79,7 +76,7 @@ public class DepartmentController {
                 departments.update(id, departmentForm);
                 redirectAttributes.addFlashAttribute("success", "Đã cập nhật bộ môn");
                 return "redirect:/admin/departments";
-            } catch (IllegalArgumentException ex) {
+            } catch (BusinessRuleException ex) {
                 bindingResult.reject("department.invalid", ex.getMessage());
             }
         }
@@ -93,7 +90,7 @@ public class DepartmentController {
         try {
             departments.toggle(id);
             redirectAttributes.addFlashAttribute("success", "Đã thay đổi trạng thái bộ môn");
-        } catch (IllegalArgumentException ex) {
+        } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
         }
         return "redirect:/admin/departments";

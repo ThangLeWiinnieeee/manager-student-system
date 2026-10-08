@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import vn.edu.fit.topicmanagement.department.Department;
@@ -20,9 +21,6 @@ public class UserAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false, unique = true, length = 50)
-    private String username;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
@@ -45,11 +43,9 @@ public class UserAccount {
     private Department department;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt = Instant.now();
+    private Instant createdAt;
 
     public Long getId() { return id; }
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getFullName() { return fullName; }
@@ -63,4 +59,11 @@ public class UserAccount {
     public Department getDepartment() { return department; }
     public void setDepartment(Department department) { this.department = department; }
     public Instant getCreatedAt() { return createdAt; }
+
+    @PrePersist
+    void initializeCreatedAt() {
+        if (createdAt == null) {
+            createdAt = Instant.now();
+        }
+    }
 }
