@@ -128,7 +128,3 @@ uri="jakarta.tags.functions" %>
         <c:if test="${not empty error}"
           ><div class="alert error" role="alert"><c:out value="${error}" /></div
         ></c:if>
-      </main>
-    </div>
-  </body>
-</html>
