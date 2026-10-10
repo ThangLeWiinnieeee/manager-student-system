@@ -47,7 +47,7 @@ public class RegistrationPeriodController {
     }
         @PostMapping
     String create(
-            @Valid @ModelAttribute RegistrationPeriodForm periodForm,
+            @Valid @ModelAttribute("periodForm") RegistrationPeriodForm periodForm,
             BindingResult bindingResult,
             Model model,
             RedirectAttributes redirectAttributes) {
@@ -76,7 +76,7 @@ public class RegistrationPeriodController {
     @PostMapping("/{id}")
     String update(
             @PathVariable Long id,
-            @Valid @ModelAttribute RegistrationPeriodForm periodForm,
+            @Valid @ModelAttribute("periodForm") RegistrationPeriodForm periodForm,
             BindingResult bindingResult,
             Model model,
             RedirectAttributes redirectAttributes) {
