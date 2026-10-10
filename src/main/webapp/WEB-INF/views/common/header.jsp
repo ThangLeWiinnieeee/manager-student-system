@@ -36,6 +36,7 @@ uri="jakarta.tags.functions" %>
             <path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7" /></svg
           >Tổng quan</a
         >
+        <%-- TV2: menu Đề tài (mọi vai trò) --%>
         <a
           class="nav-link"
           href="<c:url value='/topics'/>"
@@ -69,6 +70,7 @@ uri="jakarta.tags.functions" %>
               /></svg
             >Bộ môn</a
           >
+          <%-- TV2: menu Đợt đăng ký (quản trị) --%>
           <a
             class="nav-link"
             href="<c:url value='/admin/registration-periods'/>"
@@ -91,7 +93,7 @@ uri="jakarta.tags.functions" %>
       </nav>
       <div class="sidebar-bottom">
         <p class="sidebar-note">
-          Cổng quản lý đề tài Dành cho giảng viên và sinh viên
+          Cổng quản lý đề tài<br />Dành cho giảng viên và sinh viên
         </p>
         <form action="<c:url value='/logout'/>" method="post">
           <input
