@@ -17,9 +17,13 @@
     <p class="nav-label">Không gian làm việc</p>
     <nav aria-label="Điều hướng chính">
         <a class="nav-link" href="<c:url value='/'/>" aria-current="${currentPath == pageContext.request.contextPath.concat('/') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7"/></svg>Tổng quan</a>
+        <%-- TV2: menu Đề tài (mọi vai trò) --%>
+        <a class="nav-link" href="<c:url value='/topics'/>" aria-current="${fn:contains(currentPath, '/topics') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h6l3 3h9v13H3z"/><path d="M3 10h18"/></svg>Đề tài</a>
         <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')}">
             <a class="nav-link" href="<c:url value='/admin/users'/>" aria-current="${fn:contains(currentPath, '/admin/users') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5v2"/></svg>Tài khoản</a>
             <a class="nav-link" href="<c:url value='/admin/departments'/>" aria-current="${fn:contains(currentPath, '/admin/departments') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5l8-3 8 3v16H4M9 21v-5h6v5M8 8h1m6 0h1M8 12h1m6 0h1"/></svg>Bộ môn</a>
+            <%-- TV2: menu Đợt đăng ký (quản trị) --%>
+            <a class="nav-link" href="<c:url value='/admin/registration-periods'/>" aria-current="${fn:contains(currentPath, '/admin/registration-periods') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 11h18"/></svg>Đợt đăng ký</a>
         </c:if>
         <a class="nav-link" href="<c:url value='/profile'/>" aria-current="${fn:contains(currentPath, '/profile') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>Hồ sơ cá nhân</a>
     </nav>
