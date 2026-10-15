@@ -1,45 +1,495 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html; charset=UTF-8"
+         pageEncoding="UTF-8" %>
+
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<c:set var="currentPath" value="${requestScope['jakarta.servlet.forward.request_uri']}"/>
+
+<c:set var="currentPath"
+       value="${requestScope['jakarta.servlet.forward.request_uri']}"/>
+
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><c:out value="${empty pageTitle ? 'Quản lý đề tài sinh viên' : pageTitle}"/> | Khoa CNTT</title>
-    <link rel="stylesheet" href="<c:url value='/css/app.css'/>">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1">
+
+    <title>
+        <c:out value="${empty pageTitle ? 'Quản lý đề tài sinh viên' : pageTitle}"/>
+        | Khoa CNTT
+    </title>
+
+    <link rel="stylesheet"
+          href="<c:url value='/css/app.css'/>">
 </head>
+
 <body>
-<a class="skip-link" href="#main-content">Đến nội dung chính</a>
-<aside class="sidebar">
-    <a class="brand" href="<c:url value='/'/>"><span class="brand-mark" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h6l3 3h9v13H3z"/><path d="M3 10h18"/></svg></span><span>Quản lý đề tài<small>Khoa Công nghệ thông tin</small></span></a>
-    <p class="nav-label">Không gian làm việc</p>
-    <nav aria-label="Điều hướng chính">
-        <a class="nav-link" href="<c:url value='/'/>" aria-current="${currentPath == pageContext.request.contextPath.concat('/') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7"/></svg>Tổng quan</a>
-        <%-- TV2: menu Đề tài (mọi vai trò) --%>
-        <a class="nav-link" href="<c:url value='/topics'/>" aria-current="${fn:contains(currentPath, '/topics') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h6l3 3h9v13H3z"/><path d="M3 10h18"/></svg>Đề tài</a>
-        <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')}">
-            <a class="nav-link" href="<c:url value='/admin/users'/>" aria-current="${fn:contains(currentPath, '/admin/users') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5v2"/></svg>Tài khoản</a>
-            <a class="nav-link" href="<c:url value='/admin/departments'/>" aria-current="${fn:contains(currentPath, '/admin/departments') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5l8-3 8 3v16H4M9 21v-5h6v5M8 8h1m6 0h1M8 12h1m6 0h1"/></svg>Bộ môn</a>
-            <%-- TV2: menu Đợt đăng ký (quản trị) --%>
-            <a class="nav-link" href="<c:url value='/admin/registration-periods'/>" aria-current="${fn:contains(currentPath, '/admin/registration-periods') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 11h18"/></svg>Đợt đăng ký</a>
-        </c:if>
-        <a class="nav-link" href="<c:url value='/profile'/>" aria-current="${fn:contains(currentPath, '/profile') ? 'page' : 'false'}"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg>Hồ sơ cá nhân</a>
-    </nav>
-    <div class="sidebar-bottom">
-        <p class="sidebar-note">Cổng quản lý đề tài<br>Dành cho giảng viên và sinh viên</p>
-        <form action="<c:url value='/logout'/>" method="post">
-            <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
-            <button type="submit" class="link-button">Đăng xuất</button>
-        </form>
-    </div>
-</aside>
-<div class="workspace">
-<header class="topbar">
-    <div class="breadcrumb"><a href="<c:url value='/'/>">Không gian làm việc</a><span>/</span><c:out value="${pageTitle}"/></div>
-    <a class="account-link" href="<c:url value='/profile'/>"><span class="avatar" aria-hidden="true"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><c:out value="${pageContext.request.userPrincipal.principal.fullName}"/></a>
-</header>
-<main class="container" id="main-content">
-    <c:if test="${not empty success}"><div class="alert success" role="status"><c:out value="${success}"/></div></c:if>
-    <c:if test="${not empty error}"><div class="alert error" role="alert"><c:out value="${error}"/></div></c:if>
+
+    <%-- ========================================= --%>
+    <%-- SKIP LINK                                 --%>
+    <%-- ========================================= --%>
+
+    <a class="skip-link" href="#main-content">
+        Đến nội dung chính
+    </a>
+
+
+    <%-- ========================================= --%>
+    <%-- SIDEBAR                                   --%>
+    <%-- ========================================= --%>
+
+    <aside class="sidebar">
+
+        <%-- LOGO VA TEN HE THONG --%>
+
+        <a class="brand" href="<c:url value='/'/>">
+
+            <span class="brand-mark" aria-hidden="true">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
+
+                    <path d="M3 7V4h6l3 3h9v13H3z"/>
+                    <path d="M3 10h18"/>
+
+                </svg>
+
+            </span>
+
+            <span>
+                Quản lý đề tài
+                <small>Khoa Công nghệ thông tin</small>
+            </span>
+
+        </a>
+
+
+        <p class="nav-label">
+            Không gian làm việc
+        </p>
+
+
+        <%-- ========================================= --%>
+        <%-- MENU DIEU HUONG CHINH                     --%>
+        <%-- ========================================= --%>
+
+        <nav aria-label="Điều hướng chính">
+
+
+            <%-- ===================================== --%>
+            <%-- 1. TONG QUAN - MOI VAI TRO            --%>
+            <%-- ===================================== --%>
+
+            <a class="nav-link"
+               href="<c:url value='/'/>"
+               aria-current="${currentPath == pageContext.request.contextPath.concat('/') ? 'page' : 'false'}">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
+
+                    <path d="m3 10 9-7 9 7v10H3zM9 20v-7h6v7"/>
+
+                </svg>
+
+                Tổng quan
+            </a>
+
+
+            <%-- ===================================== --%>
+            <%-- 2. DE TAI - TV2                       --%>
+            <%-- ===================================== --%>
+
+            <a class="nav-link"
+               href="<c:url value='/topics'/>"
+               aria-current="${fn:contains(currentPath, '/topics') ? 'page' : 'false'}">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
+
+                    <path d="M3 7V4h6l3 3h9v13H3z"/>
+                    <path d="M3 10h18"/>
+
+                </svg>
+
+                Đề tài
+            </a>
+
+
+            <%-- ========================================= --%>
+            <%-- MENU CHUNG CHO ADMIN VA DEAN            --%>
+            <%-- ========================================= --%>
+
+            <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')}">
+
+
+                <%-- ================================= --%>
+                <%-- 3. QUAN LY TAI KHOAN               --%>
+                <%-- ================================= --%>
+
+                <a class="nav-link"
+                   href="<c:url value='/admin/users'/>"
+                   aria-current="${fn:contains(currentPath, '/admin/users') ? 'page' : 'false'}">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
+
+                        <circle cx="9" cy="8" r="3"/>
+
+                        <path d="M3 21v-3a6 6 0 0 1 12 0v3
+                                 M16 5a3 3 0 0 1 0 6
+                                 m2 3a5 5 0 0 1 3 5v2"/>
+
+                    </svg>
+
+                    Tài khoản
+                </a>
+
+
+                <%-- ================================= --%>
+                <%-- 4. QUAN LY BO MON                 --%>
+                <%-- ================================= --%>
+
+                <a class="nav-link"
+                   href="<c:url value='/admin/departments'/>"
+                   aria-current="${fn:contains(currentPath, '/admin/departments') ? 'page' : 'false'}">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
+
+                        <path d="M4 21V5l8-3 8 3v16H4
+                                 M9 21v-5h6v5
+                                 M8 8h1m6 0h1
+                                 M8 12h1m6 0h1"/>
+
+                    </svg>
+
+                    Bộ môn
+                </a>
+
+
+                <%-- ================================= --%>
+                <%-- 5. DOT DANG KY - TV2              --%>
+                <%-- ================================= --%>
+
+                <a class="nav-link"
+                   href="<c:url value='/admin/registration-periods'/>"
+                   aria-current="${fn:contains(currentPath, '/admin/registration-periods') ? 'page' : 'false'}">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
+
+                        <rect x="3"
+                              y="5"
+                              width="18"
+                              height="16"
+                              rx="2"/>
+
+                        <path d="M8 3v4m8-4v4M3 11h18"/>
+
+                    </svg>
+
+                    Đợt đăng ký
+                </a>
+
+
+                <%-- ================================= --%>
+                <%-- 6. NHOM SINH VIEN - TV3            --%>
+                <%-- ================================= --%>
+
+                <a class="nav-link"
+                   href="<c:url value='/admin/student-groups'/>"
+                   aria-current="${fn:contains(currentPath, '/admin/student-groups') ? 'page' : 'false'}">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
+
+                        <circle cx="9" cy="8" r="3"/>
+
+                        <path d="M3 21v-3a6 6 0 0 1 12 0v3"/>
+
+                        <path d="M16 5a3 3 0 0 1 0 6"/>
+
+                        <path d="M18 14a5 5 0 0 1 3 5v2"/>
+
+                    </svg>
+
+                    Nhóm sinh viên
+                </a>
+
+            </c:if>
+
+
+            <%-- ========================================= --%>
+            <%-- TV3: MENU RIENG CHO TRUONG KHOA         --%>
+            <%-- DEAN XET DUYET DANG KY DE TAI CUA NHOM  --%>
+            <%-- ========================================= --%>
+
+            <c:if test="${pageContext.request.isUserInRole('DEAN')}">
+
+                <a class="nav-link"
+                   href="<c:url value='/dean/group-topic-registrations'/>"
+                   aria-current="${fn:contains(currentPath, '/dean/group-topic-registrations') ? 'page' : 'false'}">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
+
+                        <path d="M9 11l3 3L22 4"/>
+
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5
+                                 a2 2 0 0 1-2-2V5
+                                 a2 2 0 0 1 2-2h11"/>
+
+                    </svg>
+
+                    Xét duyệt đăng ký đề tài
+                </a>
+
+            </c:if>
+
+
+            <%-- ========================================= --%>
+            <%-- TV3: GIANG VIEN QUAN LY NHOM SINH VIEN --%>
+            <%-- KHONG HIEN THI CAC MENU ADMIN KHAC     --%>
+            <%-- ========================================= --%>
+
+            <c:if test="${pageContext.request.isUserInRole('LECTURER')}">
+
+                <a class="nav-link"
+                   href="<c:url value='/admin/student-groups'/>"
+                   aria-current="${fn:contains(currentPath, '/admin/student-groups') ? 'page' : 'false'}">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
+
+                        <circle cx="9" cy="8" r="3"/>
+                        <path d="M3 21v-3a6 6 0 0 1 12 0v3"/>
+                        <path d="M16 5a3 3 0 0 1 0 6"/>
+                        <path d="M18 14a5 5 0 0 1 3 5v2"/>
+
+                    </svg>
+
+                    Nhóm sinh viên
+                </a>
+
+            </c:if>
+
+
+            <%-- ========================================= --%>
+            <%-- TV3: MENU BAO CAO SINH VIEN             --%>
+            <%-- DANH CHO DEAN VA LECTURER               --%>
+            <%-- ========================================= --%>
+
+            <c:if test="${pageContext.request.isUserInRole('DEAN')
+                         or pageContext.request.isUserInRole('LECTURER')}">
+
+                <a class="nav-link"
+                   href="<c:url value='/review/submissions'/>"
+                   aria-current="${fn:contains(currentPath, '/review/submissions') ? 'page' : 'false'}">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
+
+                        <path d="M6 3h9l5 5v13H6z"/>
+
+                        <path d="M14 3v6h6"/>
+
+                        <path d="M9 13h8"/>
+
+                        <path d="M9 17h8"/>
+
+                    </svg>
+
+                    Báo cáo sinh viên
+                </a>
+
+            </c:if>
+
+
+            <%-- ========================================= --%>
+            <%-- TV3: MENU RIENG CHO SINH VIEN           --%>
+            <%-- ========================================= --%>
+
+            <c:if test="${pageContext.request.isUserInRole('STUDENT')}">
+
+                <a class="nav-link"
+                   href="<c:url value='/student/my-groups'/>"
+                   aria-current="${fn:contains(currentPath, '/student/my-groups') ? 'page' : 'false'}">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24"
+                         aria-hidden="true">
+
+                        <circle cx="9" cy="8" r="3"/>
+
+                        <path d="M3 21v-3a6 6 0 0 1 12 0v3"/>
+
+                        <path d="M16 5a3 3 0 0 1 0 6"/>
+
+                        <path d="M18 14a5 5 0 0 1 3 5v2"/>
+
+                    </svg>
+
+                    Nhóm của tôi
+                </a>
+
+            </c:if>
+
+
+            <%-- ========================================= --%>
+            <%-- HO SO CA NHAN - MOI VAI TRO              --%>
+            <%-- ========================================= --%>
+
+            <a class="nav-link"
+               href="<c:url value='/profile'/>"
+               aria-current="${fn:contains(currentPath, '/profile') ? 'page' : 'false'}">
+
+                <svg class="nav-icon"
+                     viewBox="0 0 24 24"
+                     aria-hidden="true">
+
+                    <circle cx="12" cy="8" r="4"/>
+
+                    <path d="M4 21v-2a8 8 0 0 1 16 0v2"/>
+
+                </svg>
+
+                Hồ sơ cá nhân
+            </a>
+
+        </nav>
+
+
+        <%-- ========================================= --%>
+        <%-- SIDEBAR BOTTOM                           --%>
+        <%-- ========================================= --%>
+
+        <div class="sidebar-bottom">
+
+            <p class="sidebar-note">
+                Cổng quản lý đề tài<br>
+                Dành cho giảng viên và sinh viên
+            </p>
+
+
+            <%-- DANG XUAT --%>
+
+            <form action="<c:url value='/logout'/>"
+                  method="post">
+
+                <input type="hidden"
+                       name="${_csrf.parameterName}"
+                       value="${_csrf.token}">
+
+                <button type="submit"
+                        class="link-button">
+                    Đăng xuất
+                </button>
+
+            </form>
+
+        </div>
+
+    </aside>
+
+
+    <%-- ========================================= --%>
+    <%-- MAIN WORKSPACE                            --%>
+    <%-- ========================================= --%>
+
+    <div class="workspace">
+
+
+        <%-- TOPBAR --%>
+
+        <header class="topbar">
+
+
+            <%-- BREADCRUMB --%>
+
+            <div class="breadcrumb">
+
+                <a href="<c:url value='/'/>">
+                    Không gian làm việc
+                </a>
+
+                <span>/</span>
+
+                <c:out value="${pageTitle}"/>
+
+            </div>
+
+
+            <%-- THONG TIN TAI KHOAN --%>
+
+            <a class="account-link"
+               href="<c:url value='/profile'/>">
+
+                <span class="avatar"
+                      aria-hidden="true">
+
+                    <svg class="nav-icon"
+                         viewBox="0 0 24 24">
+
+                        <circle cx="12" cy="8" r="4"/>
+
+                        <path d="M4 21a8 8 0 0 1 16 0"/>
+
+                    </svg>
+
+                </span>
+
+                <c:out value="${pageContext.request.userPrincipal.principal.fullName}"/>
+
+            </a>
+
+        </header>
+
+
+        <%-- ========================================= --%>
+        <%-- MAIN CONTENT                              --%>
+        <%-- ========================================= --%>
+
+        <main class="container" id="main-content">
+
+
+            <%-- THONG BAO THANH CONG --%>
+
+            <c:if test="${not empty success}">
+
+                <div class="alert success"
+                     role="status">
+
+                    <c:out value="${success}"/>
+
+                </div>
+
+            </c:if>
+
+
+            <%-- THONG BAO LOI --%>
+
+            <c:if test="${not empty error}">
+
+                <div class="alert error"
+                     role="alert">
+
+                    <c:out value="${error}"/>
+
+                </div>
+
+            </c:if>
+
+
+            <%-- Noi dung cua tung trang JSP bat dau tai day --%>
