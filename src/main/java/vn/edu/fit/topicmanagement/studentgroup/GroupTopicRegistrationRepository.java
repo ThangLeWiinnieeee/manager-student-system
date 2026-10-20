@@ -26,6 +26,15 @@ public interface GroupTopicRegistrationRepository
             GroupTopicRegistrationStatus status
     );
 
+    // Lay dang ky theo de tai
+    List<GroupTopicRegistration> findByTopic_Id(Long topicId);
+
+    // Kiem tra de tai da duoc chap thuan dang ky hay chua
+    boolean existsByTopic_IdAndStatus(
+            Long topicId,
+            GroupTopicRegistrationStatus status
+    );
+
     // DEAN: Danh sach tat ca dang ky
     @EntityGraph(attributePaths = {"group", "topic"})
     List<GroupTopicRegistration>

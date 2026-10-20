@@ -46,6 +46,7 @@ public class UserAccount {
     private Instant createdAt;
 
     public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getFullName() { return fullName; }

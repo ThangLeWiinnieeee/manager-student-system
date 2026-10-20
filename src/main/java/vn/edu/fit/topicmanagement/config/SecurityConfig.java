@@ -85,6 +85,16 @@ public class SecurityConfig {
                                 "DEAN"
                         )
 
+                        // TV4:
+                        .requestMatchers("/dean/**")
+                        .hasAnyRole("DEAN", "ADMIN")
+
+                        .requestMatchers("/lecturer/**")
+                        .hasRole("LECTURER")
+
+                        .requestMatchers("/student/**")
+                        .hasRole("STUDENT")
+
                         // Cac URL con lai yeu cau dang nhap.
                         // Phan quyen chi tiet duoc kiem tra
                         // bang @PreAuthorize tai Controller/Service
