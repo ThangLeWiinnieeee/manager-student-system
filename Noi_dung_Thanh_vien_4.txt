@@ -1,0 +1,51 @@
+﻿KẾ HOẠCH PHÂN CÔNG CÔNG VIỆC 03 TUẦN
+HỆ THỐNG QUẢN LÝ ĐỀ TÀI SINH VIÊN
+Công nghệ: Java JSP – Spring Boot – PostgreSQL
+Thành viên 4: Hoàng Vũ
+
+1. PHÂN CÔNG CHỨC NĂNG CHI TIẾT
+THÀNH VIÊN 4 — HỘI ĐỒNG, PHẢN BIỆN VÀ KẾT QUẢ
+Tạo và cập nhật hội đồng; mỗi hội đồng có từ ba đến năm giảng viên.
+Chọn đúng một Chủ tịch, một Thư ký và các thành viên còn lại; không thêm trùng giảng viên.
+Phân công GVPB và phân công đề tài vào hội đồng.
+Cho phép một GV chấm nhiều đề tài nhưng không được chấm đề tài mình đang hướng dẫn.
+Giảng viên nhập điểm thành phần, nhận xét, lưu nháp và xác nhận nộp điểm.
+Kiểm tra khoảng điểm và khóa chỉnh sửa sau khi điểm được xác nhận.
+Chủ tịch kiểm tra đủ điểm, tính trung bình, ghi kết luận và xác nhận kết quả cuối.
+Trưởng khoa công bố hoặc thu hồi kết quả; sinh viên chỉ xem kết quả đề tài của nhóm mình.
+Quản lý thông báo của khoa/nhà trường: đăng, sửa, ẩn và chọn đối tượng nhận.
+Đầu ra: hội đồng, phân công phản biện, điểm, nhận xét, kết quả cuối cùng và thông báo chính thức.
+
+2. PHÂN CÔNG MODULE CHÍNH
+Người phụ trách | Module | Phạm vi chịu trách nhiệm
+Thành viên 4 | Hội đồng và kết quả | Hội đồng; GVPB; phân công chấm; nhập điểm; tổng hợp; công bố kết quả; thông báo.
+
+3. THỨ TỰ TRIỂN KHAI CHỨC NĂNG
+Thứ tự | Phụ trách | Module | Công việc nhận | Đầu ra chuyển tiếp
+4 | TV4 | Hội đồng và kết quả | Hội đồng, phản biện, chấm điểm và công bố kết quả. | Điểm cuối và kết quả được công bố.
+
+4. KẾ HOẠCH CÔNG VIỆC THEO NGÀY
+Ngày | Người | Công việc | Kết quả bắt buộc
+1 | TV4 | Cấu hình Git, README, quy ước branch/PR và dữ liệu mẫu. | Nhóm chạy được dự án trên máy cá nhân.
+2 | TV4 | CRUD giảng viên. | Quản lý giảng viên end-to-end.
+3 | TV4 | CRUD thông báo. | Đăng, sửa, ẩn và xem thông báo.
+4 | TV4 | Upload file, kiểm tra định dạng và dung lượng. | Upload và tải file mẫu thành công.
+5 | TV4 | CRUD hội đồng. | Lưu được hội đồng và trạng thái.
+6 | TV4 | Thêm thành viên hội đồng và vai trò. | Dữ liệu hội đồng hiển thị đúng.
+7 | Cả nhóm | Merge, kiểm thử tích hợp và sửa lỗi tuần 1. | Demo đăng nhập, CRUD, đề tài và nhóm.
+Ngày | Người | Công việc | Kết quả bắt buộc
+8 | TV4 | Giới hạn hội đồng 3–5 GV. | Validation Backend và giao diện đạt.
+9 | TV4 | Gán Chủ tịch, Thư ký, Thành viên. | Hội đồng có đúng vai trò bắt buộc.
+10 | TV4 | Phân công hội đồng cho đề tài. | Liên kết đúng đề tài và hội đồng.
+11 | TV4 | Chặn trùng thành viên hội đồng. | Không lưu dữ liệu hội đồng sai.
+12 | TV4 | Phân công GVPB. | Đề tài có người phản biện hợp lệ.
+13 | TV4 | Chặn GVHD chấm đề tài mình hướng dẫn. | Test xung đột phân công đạt.
+14 | Cả nhóm | Kiểm thử toàn luồng và sửa lỗi tuần 2. | Demo từ tạo đợt đến nộp báo cáo.
+Ngày | Người | Công việc | Kết quả bắt buộc
+15 | TV4 | Form nhập điểm và nhận xét. | GV được phân công lưu được điểm.
+16 | TV4 | Kiểm tra xung đột GVHD và người chấm. | Không thể chấm đề tài đang hướng dẫn.
+17 | TV4 | Tính điểm trung bình. | Công thức và làm tròn chính xác.
+18 | TV4 | Chủ tịch xác nhận, Trưởng khoa công bố. | SV chỉ thấy điểm sau công bố.
+19 | Cả nhóm | Test phân quyền, nghiệp vụ và end-to-end. | Đóng mọi lỗi Critical/High.
+20 | Cả nhóm | Test PostgreSQL sạch, WAR, responsive và rehearsal. | Có release candidate ổn định.
+21 | Cả nhóm | Deploy, smoke test, README và bàn giao. | Ứng dụng chạy; demo đầy đủ luồng.
