@@ -2,6 +2,7 @@ package vn.edu.fit.topicmanagement.user;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 
 public class PasswordResetForm {
     @NotBlank(message = "Mật khẩu mới không được để trống")
@@ -15,4 +16,11 @@ public class PasswordResetForm {
     public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
     public String getConfirmPassword() { return confirmPassword; }
     public void setConfirmPassword(String confirmPassword) { this.confirmPassword = confirmPassword; }
+
+    public void validate() {
+        PasswordPolicy.validate(newPassword);
+        if (!newPassword.equals(confirmPassword)) {
+            throw new BusinessRuleException("Xác nhận mật khẩu mới không khớp");
+        }
+    }
 }

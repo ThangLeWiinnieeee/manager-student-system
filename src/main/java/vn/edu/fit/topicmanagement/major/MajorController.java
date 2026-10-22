@@ -1,4 +1,4 @@
-package vn.edu.fit.topicmanagement.department;
+package vn.edu.fit.topicmanagement.major;
 
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -14,85 +14,85 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 
 @Controller
-@RequestMapping("/admin/departments")
+@RequestMapping("/admin/majors")
 @PreAuthorize("hasAnyRole('ADMIN', 'DEAN')")
-public class DepartmentController {
-    private final DepartmentService departments;
+public class MajorController {
+    private final MajorService majors;
 
-    public DepartmentController(DepartmentService departments) {
-        this.departments = departments;
+    public MajorController(MajorService majors) {
+        this.majors = majors;
     }
 
     @GetMapping
     String list(Model model) {
-        model.addAttribute("departments", departments.findAll());
-        return "admin/departments/list";
+        model.addAttribute("majors", majors.findAll());
+        return "admin/majors/list";
     }
 
     @GetMapping("/new")
     String createForm(Model model) {
-        model.addAttribute("departmentForm", new DepartmentForm());
+        model.addAttribute("majorForm", new MajorForm());
         model.addAttribute("editing", false);
-        return "admin/departments/form";
+        return "admin/majors/form";
     }
 
     @PostMapping
     String create(
-            @Valid @ModelAttribute DepartmentForm departmentForm,
+            @Valid @ModelAttribute MajorForm majorForm,
             BindingResult bindingResult,
             Model model,
             RedirectAttributes redirectAttributes) {
         if (!bindingResult.hasErrors()) {
             try {
-                departments.create(departmentForm);
-                redirectAttributes.addFlashAttribute("success", "Đã tạo bộ môn");
-                return "redirect:/admin/departments";
+                majors.create(majorForm);
+                redirectAttributes.addFlashAttribute("success", "Đã tạo chuyên ngành");
+                return "redirect:/admin/majors";
             } catch (BusinessRuleException ex) {
-                bindingResult.reject("department.invalid", ex.getMessage());
+                bindingResult.reject("major.invalid", ex.getMessage());
             }
         }
         model.addAttribute("editing", false);
-        return "admin/departments/form";
+        return "admin/majors/form";
     }
 
     @GetMapping("/{id}/edit")
     String editForm(@PathVariable Long id, Model model) {
-        Department department = departments.get(id);
-        model.addAttribute("departmentForm", departments.toForm(department));
+        Major major = majors.get(id);
+        model.addAttribute("majorForm", majors.toForm(major));
         model.addAttribute("editing", true);
-        model.addAttribute("departmentId", id);
-        return "admin/departments/form";
+        model.addAttribute("majorId", id);
+        return "admin/majors/form";
     }
 
     @PostMapping("/{id}")
     String update(
             @PathVariable Long id,
-            @Valid @ModelAttribute DepartmentForm departmentForm,
+            @Valid @ModelAttribute MajorForm majorForm,
             BindingResult bindingResult,
             Model model,
             RedirectAttributes redirectAttributes) {
         if (!bindingResult.hasErrors()) {
             try {
-                departments.update(id, departmentForm);
-                redirectAttributes.addFlashAttribute("success", "Đã cập nhật bộ môn");
-                return "redirect:/admin/departments";
+                majors.update(id, majorForm);
+                redirectAttributes.addFlashAttribute("success", "Đã cập nhật chuyên ngành");
+                return "redirect:/admin/majors";
             } catch (BusinessRuleException ex) {
-                bindingResult.reject("department.invalid", ex.getMessage());
+                bindingResult.reject("major.invalid", ex.getMessage());
             }
         }
         model.addAttribute("editing", true);
-        model.addAttribute("departmentId", id);
-        return "admin/departments/form";
+        model.addAttribute("majorId", id);
+        return "admin/majors/form";
     }
 
     @PostMapping("/{id}/toggle")
     String toggle(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            departments.toggle(id);
-            redirectAttributes.addFlashAttribute("success", "Đã thay đổi trạng thái bộ môn");
+            majors.toggle(id);
+            redirectAttributes.addFlashAttribute("success", "Đã thay đổi trạng thái chuyên ngành");
         } catch (BusinessRuleException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/admin/departments";
+        return "redirect:/admin/majors";
     }
 }

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
-import vn.edu.fit.topicmanagement.department.DepartmentService;
+import vn.edu.fit.topicmanagement.major.MajorService;
 import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
 import vn.edu.fit.topicmanagement.user.Role;
 import vn.edu.fit.topicmanagement.user.UserAccountService;
@@ -31,17 +31,17 @@ import vn.edu.fit.topicmanagement.user.UserAccountService;
 public class TopicController {
     private final TopicService topics;
     private final RegistrationPeriodService periods;
-    private final DepartmentService departments;
+    private final MajorService majors;
     private final UserAccountService accounts;
 
     public TopicController(
             TopicService topics,
             RegistrationPeriodService periods,
-            DepartmentService departments,
+            MajorService majors,
             UserAccountService accounts) {
         this.topics = topics;
         this.periods = periods;
-        this.departments = departments;
+        this.majors = majors;
         this.accounts = accounts;
     }
 
@@ -49,7 +49,7 @@ public class TopicController {
     @ModelAttribute
     void referenceData(Model model) {
         model.addAttribute("periods", periods.findAll());
-        model.addAttribute("departments", departments.findEnabled());
+        model.addAttribute("majors", majors.findEnabled());
         model.addAttribute("lecturers", accounts.findAll().stream()
                 .filter(u -> u.getRole() == Role.LECTURER && u.isEnabled())
                 .toList());
@@ -59,16 +59,16 @@ public class TopicController {
     @GetMapping
     String list(
             @RequestParam(required = false) Long roundId,
-            @RequestParam(required = false) Long departmentId,
+            @RequestParam(required = false) Long majorId,
             @RequestParam(required = false) TopicStatus status,
             @RequestParam(defaultValue = "0") int page,
             Authentication authentication,
             Model model) {
         String viewerEmail = isManager(authentication) ? null : authentication.getName();
-        Page<Topic> topicPage = topics.search(roundId, departmentId, status, viewerEmail, page);
+        Page<Topic> topicPage = topics.search(roundId, majorId, status, viewerEmail, page);
         model.addAttribute("topicPage", topicPage);
         model.addAttribute("filterRoundId", roundId);
-        model.addAttribute("filterDepartmentId", departmentId);
+        model.addAttribute("filterMajorId", majorId);
         model.addAttribute("filterStatus", status);
         return "topic/list";
     }

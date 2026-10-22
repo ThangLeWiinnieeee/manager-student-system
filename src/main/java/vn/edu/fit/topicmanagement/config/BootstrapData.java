@@ -1,10 +1,12 @@
 package vn.edu.fit.topicmanagement.config;
 
+import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import vn.edu.fit.topicmanagement.user.PasswordPolicy;
 import vn.edu.fit.topicmanagement.user.Role;
 import vn.edu.fit.topicmanagement.user.UserAccount;
 import vn.edu.fit.topicmanagement.user.UserAccountRepository;
@@ -18,17 +20,16 @@ public class BootstrapData {
             PasswordEncoder passwordEncoder,
             @Value("${app.bootstrap.admin-email}") String email,
             @Value("${app.bootstrap.admin-password}") String password) {
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
         return args -> {
-            if (password.isBlank() || users.existsByEmailIgnoreCase(email)) {
+            if (password.isBlank() || users.existsByEmailIgnoreCase(normalizedEmail)) {
                 return;
             }
-            if (password.length() < 8 || password.length() > 72) {
-                throw new IllegalStateException("ADMIN_PASSWORD phải từ 8 đến 72 ký tự");
-            }
+            PasswordPolicy.validate(password);
             UserAccount admin = new UserAccount();
             admin.setPasswordHash(passwordEncoder.encode(password));
             admin.setFullName("Quản trị hệ thống");
-            admin.setEmail(email.trim().toLowerCase());
+            admin.setEmail(normalizedEmail);
             admin.setRole(Role.ADMIN);
             admin.setEnabled(true);
             users.save(admin);

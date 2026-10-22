@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import vn.edu.fit.topicmanagement.department.DepartmentService;
+import vn.edu.fit.topicmanagement.major.MajorService;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 
 @Controller
@@ -20,17 +20,17 @@ import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 @PreAuthorize("hasAnyRole('ADMIN', 'DEAN')")
 public class UserAdminController {
     private final UserAccountService accounts;
-    private final DepartmentService departments;
+    private final MajorService majors;
 
-    public UserAdminController(UserAccountService accounts, DepartmentService departments) {
+    public UserAdminController(UserAccountService accounts, MajorService majors) {
         this.accounts = accounts;
-        this.departments = departments;
+        this.majors = majors;
     }
 
     @ModelAttribute
     void commonModel(Model model) {
         model.addAttribute("roles", Role.values());
-        model.addAttribute("departments", departments.findEnabled());
+        model.addAttribute("majors", majors.findEnabled());
     }
 
     @GetMapping
@@ -69,11 +69,8 @@ public class UserAdminController {
     String editForm(@PathVariable Long id, Authentication authentication, Model model) {
         UserAccount account = accounts.get(id);
         model.addAttribute("userForm", accounts.toForm(account));
-        model.addAttribute("editing", true);
-        model.addAttribute("userId", id);
-        model.addAttribute("editingSelfAdmin", isSelfAdmin(account, authentication));
         model.addAttribute("passwordResetForm", new PasswordResetForm());
-        return "admin/users/form";
+        return editView(account, authentication, model);
     }
 
     @PostMapping("/{id}")
@@ -93,11 +90,8 @@ public class UserAdminController {
                 bindingResult.reject("user.invalid", ex.getMessage());
             }
         }
-        model.addAttribute("editing", true);
-        model.addAttribute("userId", id);
-        model.addAttribute("editingSelfAdmin", isSelfAdmin(accounts.get(id), authentication));
         model.addAttribute("passwordResetForm", new PasswordResetForm());
-        return "admin/users/form";
+        return editView(accounts.get(id), authentication, model);
     }
 
     @PostMapping("/{id}/password")
@@ -119,10 +113,7 @@ public class UserAdminController {
         }
         UserAccount account = accounts.get(id);
         model.addAttribute("userForm", accounts.toForm(account));
-        model.addAttribute("editing", true);
-        model.addAttribute("userId", id);
-        model.addAttribute("editingSelfAdmin", isSelfAdmin(account, authentication));
-        return "admin/users/form";
+        return editView(account, authentication, model);
     }
 
     @PostMapping("/{id}/toggle")
@@ -139,8 +130,11 @@ public class UserAdminController {
         return "redirect:/admin/users";
     }
 
-    private static boolean isSelfAdmin(UserAccount account, Authentication authentication) {
-        return account.getRole() == Role.ADMIN
-                && account.getEmail().equalsIgnoreCase(authentication.getName());
+    private static String editView(UserAccount account, Authentication authentication, Model model) {
+        model.addAttribute("editing", true);
+        model.addAttribute("userId", account.getId());
+        model.addAttribute("editingSelfAdmin", account.getRole() == Role.ADMIN
+                && account.getEmail().equalsIgnoreCase(authentication.getName()));
+        return "admin/users/form";
     }
 }

@@ -58,7 +58,7 @@ public class SecurityConfig {
 
                         // Tai nguyen cong khai
                         .requestMatchers(
-                                "/login",
+                                "/login", "/forgot-password", "/forgot-password/**", "/js/password-recovery.js",
                                 "/css/**",
                                 "/error"
                         ).permitAll()

@@ -24,10 +24,11 @@
         <label for="email">Email</label>
         <input id="email" name="email" type="email" autocomplete="email" placeholder="Nhập địa chỉ email" required autofocus>
         <label for="password">Mật khẩu</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required>
-        <button type="submit" class="primary full">Đăng nhập</button>
+        <input class="login-password-input" id="password" name="password" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu" required>
+        <a class="forgot-password-link" href="<c:url value='/forgot-password'/>">Quên mật khẩu?</a>
+        <button type="submit" class="primary full login-submit">Đăng nhập</button>
     </form>
-    <div class="login-help">Cần cấp tài khoản hoặc đặt lại mật khẩu?<br>Liên hệ quản trị viên khoa để được hỗ trợ.</div>
+    <div class="login-help">Cần cấp tài khoản?<br>Liên hệ quản trị viên khoa để được hỗ trợ.</div>
 </div>
 </main>
 <footer class="login-footer">Hệ thống quản lý đề tài sinh viên · Khoa Công nghệ thông tin</footer>

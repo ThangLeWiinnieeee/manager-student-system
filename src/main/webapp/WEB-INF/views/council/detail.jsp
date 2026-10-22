@@ -116,7 +116,7 @@
           <tr>
             <th>Họ và tên giảng viên</th>
             <th>Email</th>
-            <th>Bộ môn</th>
+            <th>Khoa</th>
             <th>Vai trò</th>
             <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')}">
               <th>Thao tác</th>
@@ -128,7 +128,7 @@
             <tr>
               <td><strong><c:out value="${m.lecturer.fullName}" /></strong></td>
               <td><c:out value="${m.lecturer.email}" /></td>
-              <td><c:out value="${empty m.lecturer.department ? '-' : m.lecturer.department.name}" /></td>
+              <td>Công nghệ thông tin</td>
               <td>
                 <span class="badge ${m.role == 'PRESIDENT' ? 'active' : (m.role == 'SECRETARY' ? 'info' : 'warn')}">
                   <c:out value="${m.role.displayName}" />
@@ -197,7 +197,7 @@
       <thead>
         <tr>
           <th>Tên đề tài</th>
-          <th>Bộ môn</th>
+          <th>Chuyên ngành</th>
           <th>GV Hướng dẫn</th>
           <th>GV Phản biện (GVPB)</th>
           <th>Hành động</th>
@@ -211,7 +211,7 @@
                 <c:out value="${ta.topic.title}" />
               </a>
             </td>
-            <td><c:out value="${ta.topic.department.name}" /></td>
+            <td><c:out value="${ta.topic.major.name}" default="Không giới hạn" /></td>
             <td>
               <c:forEach items="${ta.topic.advisors}" var="adv" varStatus="vs">
                 <c:out value="${adv.fullName}" /><c:if test="${not vs.last}">, </c:if>

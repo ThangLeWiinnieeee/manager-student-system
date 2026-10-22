@@ -29,7 +29,7 @@
               <c:out value="${it.topic.title}" />
             </a>
             <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">
-              Bộ môn: <c:out value="${it.topic.department.name}" />
+              Chuyên ngành: <c:out value="${it.topic.major.name}" default="Không giới hạn" />
             </div>
           </td>
           <td>

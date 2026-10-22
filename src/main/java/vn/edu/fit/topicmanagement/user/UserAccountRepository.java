@@ -9,5 +9,5 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     List<UserAccount> findAllByOrderByFullNameAsc();
     boolean existsByEmailIgnoreCase(String email);
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
-    boolean existsByDepartmentId(Long departmentId);
+    boolean existsByMajorId(Long majorId);
 }

@@ -3,8 +3,8 @@
 -- Mật khẩu mặc định cho TẤT CẢ các tài khoản là: Admin123!
 -- ====================================================================
 
--- 1. BỘ MÔN (DEPARTMENTS)
-INSERT INTO departments (id, code, name, enabled) VALUES
+-- 1. CHUYÊN NGÀNH (MAJORS)
+INSERT INTO majors (id, code, name, enabled) VALUES
 (1, 'CNPM', 'Công nghệ Phần mềm', true),
 (2, 'HTTT', 'Hệ thống Thông tin', true),
 (3, 'KHMT', 'Khoa học Máy tính', true),
@@ -13,17 +13,17 @@ ON CONFLICT (code) DO NOTHING;
 
 -- 2. TÀI KHOẢN NGƯỜI DÙNG (USERS)
 -- password_hash là bcrypt của 'Admin123!'
-INSERT INTO users (id, email, password_hash, full_name, role, enabled, department_id) VALUES
+INSERT INTO users (id, email, password_hash, full_name, role, enabled, major_id) VALUES
 -- Admin hệ thống
-(1, 'admin@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'Quản trị hệ thống', 'ADMIN', true, 1),
+(1, 'admin@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'Quản trị hệ thống', 'ADMIN', true, NULL),
 -- Trưởng khoa
-(2, 'dean@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'TS. Nguyễn Văn An (Trưởng khoa)', 'DEAN', true, 1),
+(2, 'dean@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'TS. Nguyễn Văn An (Trưởng khoa)', 'DEAN', true, NULL),
 -- Giảng viên
-(3, 'gv1@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'ThS. Trần Thị Mai', 'LECTURER', true, 1),
-(4, 'gv2@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'TS. Lê Hoàng Nam', 'LECTURER', true, 2),
-(5, 'gv3@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'ThS. Phạm Quốc Bảo', 'LECTURER', true, 3),
-(6, 'gv4@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'TS. Vũ Minh Tuấn', 'LECTURER', true, 4),
-(7, 'gv5@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'ThS. Đỗ Thu Hà', 'LECTURER', true, 1),
+(3, 'gv1@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'ThS. Trần Thị Mai', 'LECTURER', true, NULL),
+(4, 'gv2@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'TS. Lê Hoàng Nam', 'LECTURER', true, NULL),
+(5, 'gv3@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'ThS. Phạm Quốc Bảo', 'LECTURER', true, NULL),
+(6, 'gv4@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'TS. Vũ Minh Tuấn', 'LECTURER', true, NULL),
+(7, 'gv5@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'ThS. Đỗ Thu Hà', 'LECTURER', true, NULL),
 -- Sinh viên
 (8, 'sv1@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'Nguyễn Văn Hùng', 'STUDENT', true, 1),
 (9, 'sv2@fit.edu.vn', '{bcrypt}$2a$10$.qoBCXd9xd10EKlFIZnfyeU9xfNoOmjLp5TUyV6W84HOS5yd3o2/a', 'Lê Thị Bích', 'STUDENT', true, 1),
@@ -34,11 +34,11 @@ ON CONFLICT (email) DO UPDATE SET
     password_hash = EXCLUDED.password_hash,
     full_name = EXCLUDED.full_name,
     role = EXCLUDED.role,
-    department_id = EXCLUDED.department_id;
+    major_id = EXCLUDED.major_id;
 
--- Đồng bộ sequence cho bảng users và departments
+-- Đồng bộ sequence cho bảng users và majors
 SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
-SELECT setval('departments_id_seq', (SELECT MAX(id) FROM departments));
+SELECT setval(pg_get_serial_sequence('majors', 'id'), (SELECT MAX(id) FROM majors));
 
 -- 3. ĐỢT ĐĂNG KÝ (REGISTRATION PERIODS)
 INSERT INTO registration_periods (id, name, round_type, gv_start, gv_end, sv_start, sv_end, gvpb_deadline, council_report_date) VALUES
@@ -51,7 +51,7 @@ ON CONFLICT (id) DO NOTHING;
 SELECT setval('registration_periods_id_seq', (SELECT MAX(id) FROM registration_periods));
 
 -- 4. ĐỀ TÀI (TOPICS)
-INSERT INTO topics (id, title, description, status, round_id, department_id, created_by_id) VALUES
+INSERT INTO topics (id, title, description, status, round_id, major_id, created_by_id) VALUES
 (1, 'Xây dựng Hệ thống Quản lý đề tài tốt nghiệp sinh viên theo mô hình Microservices', 
  'Phát triển nền tảng web phục vụ quản lý đồ án, chấm điểm hội đồng và thông báo tự động cho Khoa CNTT.', 
  'PUBLISHED', 1, 1, 3),
@@ -101,7 +101,7 @@ SELECT setval('group_topic_registrations_id_seq', (SELECT MAX(id) FROM group_top
 
 -- 8. HỘI ĐỒNG BẢO VỆ (COUNCILS - TV4)
 INSERT INTO councils (id, name, round_id, location, report_date, status) VALUES
-(1, 'Hội đồng KLTN số 01 - Bộ môn CNPM', 1, 'Phòng Hội đồng A2-301', '2026-12-25 08:00:00', 'ACTIVE')
+(1, 'Hội đồng KLTN số 01 - Chuyên ngành CNPM', 1, 'Phòng Hội đồng A2-301', '2026-12-25 08:00:00', 'ACTIVE')
 ON CONFLICT (round_id, name) DO NOTHING;
 
 SELECT setval('councils_id_seq', (SELECT MAX(id) FROM councils));

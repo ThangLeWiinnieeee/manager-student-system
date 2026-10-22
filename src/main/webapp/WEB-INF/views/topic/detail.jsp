@@ -21,7 +21,7 @@
                 </c:choose>
             </dd>
             <dt>Đợt đăng ký</dt><dd><c:out value="${topic.round.name}"/> (<c:out value="${topic.round.type.displayName}"/>)</dd>
-            <dt>Bộ môn</dt><dd><c:out value="${topic.department.name}"/></dd>
+            <dt>Chuyên ngành</dt><dd><c:out value="${topic.major.name}" default="Không giới hạn"/></dd>
             <dt>Giảng viên tạo</dt><dd><c:out value="${topic.createdBy.fullName}"/></dd>
             <dt>Giảng viên hướng dẫn</dt><dd><c:forEach items="${topic.advisors}" var="advisor" varStatus="loop"><c:out value="${advisor.fullName}"/><c:if test="${not loop.last}">, </c:if></c:forEach></dd>
             <dt>Mô tả</dt><dd><c:out value="${empty topic.description ? '-' : topic.description}"/></dd>

@@ -4,7 +4,7 @@ Mỗi module Backend trả về view trong thư mục cùng tên:
 
 | Java package | JSP directory | Phụ trách |
 |---|---|---|
-| `auth`, `user`, `department` | `auth`, `profile`, `admin` | TV1 |
+| `auth`, `user`, `major` | `auth`, `profile`, `admin` | TV1 |
 | `registrationperiod` | `registration-period` | TV2 |
 | `topic` | `topic` | TV2 |
 | `studentgroup` | `student-group` | TV3 |
