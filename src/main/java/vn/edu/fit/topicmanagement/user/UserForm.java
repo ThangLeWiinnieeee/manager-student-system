@@ -18,7 +18,7 @@ public class UserForm {
     @NotNull(message = "Vai trò không được để trống")
     private Role role;
 
-    private Long departmentId;
+    private Long majorId;
     private boolean enabled = true;
 
     public String getFullName() { return fullName; }
@@ -27,8 +27,8 @@ public class UserForm {
     public void setEmail(String email) { this.email = email; }
     public Role getRole() { return role; }
     public void setRole(Role role) { this.role = role; }
-    public Long getDepartmentId() { return departmentId; }
-    public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
+    public Long getMajorId() { return majorId; }
+    public void setMajorId(Long majorId) { this.majorId = majorId; }
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
 }

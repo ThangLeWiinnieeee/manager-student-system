@@ -20,12 +20,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import vn.edu.fit.topicmanagement.department.Department;
+import vn.edu.fit.topicmanagement.major.Major;
 import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod;
 import vn.edu.fit.topicmanagement.user.UserAccount;
 
 /**
- * Đề tài: thuộc một bộ môn, thuộc một đợt đăng ký,
+ * Đề tài: có thể phân loại theo chuyên ngành, thuộc một đợt đăng ký,
  * do một giảng viên tạo, do một hoặc hai giảng viên hướng dẫn (ràng buộc ở TopicService).
  */
 @Entity
@@ -57,9 +57,9 @@ public class Topic {
     @JoinColumn(name = "round_id")
     private RegistrationPeriod round;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "department_id")
-    private Department department;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "major_id")
+    private Major major;
 
     /** Giảng viên tạo đề tài (chủ sở hữu bản nháp). */
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
@@ -92,8 +92,8 @@ public class Topic {
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
     public RegistrationPeriod getRound() { return round; }
     public void setRound(RegistrationPeriod round) { this.round = round; }
-    public Department getDepartment() { return department; }
-    public void setDepartment(Department department) { this.department = department; }
+    public Major getMajor() { return major; }
+    public void setMajor(Major major) { this.major = major; }
     public UserAccount getCreatedBy() { return createdBy; }
     public void setCreatedBy(UserAccount createdBy) { this.createdBy = createdBy; }
     public Set<UserAccount> getAdvisors() { return advisors; }

@@ -177,8 +177,8 @@
                 <%-- ================================= --%>
 
                 <a class="nav-link"
-                   href="<c:url value='/admin/departments'/>"
-                   aria-current="${fn:contains(currentPath, '/admin/departments') ? 'page' : 'false'}">
+                   href="<c:url value='/admin/majors'/>"
+                   aria-current="${fn:contains(currentPath, '/admin/majors') ? 'page' : 'false'}">
 
                     <svg class="nav-icon"
                          viewBox="0 0 24 24"
@@ -191,7 +191,7 @@
 
                     </svg>
 
-                    Bộ môn
+                    Chuyên ngành
                 </a>
 
 
@@ -504,8 +504,11 @@
                        value="${_csrf.token}">
 
                 <button type="submit"
-                        class="link-button">
-                    Đăng xuất
+                        class="logout-button">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9 4H4v16h5M14 8l4 4-4 4M8 12h10"/>
+                    </svg>
+                    <span>Đăng xuất</span>
                 </button>
 
             </form>

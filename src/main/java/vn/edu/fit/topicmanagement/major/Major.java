@@ -1,4 +1,4 @@
-package vn.edu.fit.topicmanagement.department;
+package vn.edu.fit.topicmanagement.major;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,8 +10,8 @@ import jakarta.persistence.PrePersist;
 import java.time.Instant;
 
 @Entity
-@Table(name = "departments")
-public class Department {
+@Table(name = "majors")
+public class Major {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

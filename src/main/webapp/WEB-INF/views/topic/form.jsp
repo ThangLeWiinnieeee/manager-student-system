@@ -31,12 +31,12 @@
             <form:errors path="roundId" cssClass="field-error"/>
         </div>
         <div>
-            <form:label path="departmentId">Bộ môn</form:label>
-            <form:select path="departmentId" required="required">
-                <form:option value="" label="-- Chọn bộ môn --"/>
-                <form:options items="${departments}" itemValue="id" itemLabel="name"/>
+            <form:label path="majorId">Chuyên ngành phù hợp (tùy chọn)</form:label>
+            <form:select path="majorId">
+                <form:option value="" label="-- Không giới hạn chuyên ngành --"/>
+                <form:options items="${majors}" itemValue="id" itemLabel="name"/>
             </form:select>
-            <form:errors path="departmentId" cssClass="field-error"/>
+            <form:errors path="majorId" cssClass="field-error"/>
         </div>
     </div>
     <form:label path="advisorIds">Giảng viên hướng dẫn (giữ Ctrl để chọn tối đa 2)</form:label>

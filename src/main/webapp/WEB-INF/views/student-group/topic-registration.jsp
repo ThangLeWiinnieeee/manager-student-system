@@ -92,7 +92,7 @@
                 <tr>
                     <th>Mã đề tài</th>
                     <th>Tên đề tài</th>
-                    <th>Bộ môn</th>
+                    <th>Chuyên ngành</th>
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
                 </tr>
@@ -114,7 +114,7 @@
                         </td>
 
                         <td>
-                            <c:out value="${topic.department.name}"/>
+                            <c:out value="${topic.major.name}" default="Không giới hạn"/>
                         </td>
 
                         <td>

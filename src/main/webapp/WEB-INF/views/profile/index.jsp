@@ -12,12 +12,13 @@
     <dt>Họ tên</dt><dd><c:out value="${account.fullName}"/></dd>
     <dt>Email đăng nhập</dt><dd><c:out value="${account.email}"/></dd>
     <dt>Vai trò</dt><dd><c:out value="${account.role.displayName}"/></dd>
-    <dt>Bộ môn</dt><dd><c:out value="${empty account.department ? '-' : account.department.name}"/></dd>
+    <dt>Khoa</dt><dd>Công nghệ thông tin</dd>
+    <c:if test="${account.role == 'STUDENT'}"><dt>Chuyên ngành</dt><dd><c:out value="${empty account.major ? 'Chưa cập nhật' : account.major.name}"/></dd></c:if>
 </dl>
 </section>
 <form:form modelAttribute="changePasswordForm" method="post" action="${pageContext.request.contextPath}/profile/password" cssClass="form-card narrow">
     <h2>Đổi mật khẩu</h2>
-    <p class="form-intro">Sử dụng mật khẩu từ 8 đến 72 ký tự để bảo vệ tài khoản.</p>
+    <p class="form-intro">Sử dụng mật khẩu ít nhất 8 ký tự, tối đa 72 byte UTF-8 (ký tự có dấu có thể chiếm nhiều byte).</p>
     <form:errors path="*" cssClass="alert error" element="div"/>
     <form:label path="currentPassword">Mật khẩu hiện tại</form:label><form:password path="currentPassword" autocomplete="current-password" required="required"/><form:errors path="currentPassword" cssClass="field-error"/>
     <form:label path="newPassword">Mật khẩu mới</form:label><form:password path="newPassword" autocomplete="new-password" minlength="8" maxlength="72" required="required"/><form:errors path="newPassword" cssClass="field-error"/>

@@ -21,8 +21,7 @@ public class TopicForm {
     @NotNull(message = "Vui lòng chọn đợt đăng ký")
     private Long roundId;
 
-    @NotNull(message = "Vui lòng chọn bộ môn")
-    private Long departmentId;
+    private Long majorId;
 
     @NotEmpty(message = "Đề tài phải có ít nhất một giảng viên hướng dẫn")
     @Size(max = 2, message = "Đề tài chỉ được hướng dẫn bởi tối đa hai giảng viên")
@@ -34,8 +33,8 @@ public class TopicForm {
     public void setDescription(String description) { this.description = description; }
     public Long getRoundId() { return roundId; }
     public void setRoundId(Long roundId) { this.roundId = roundId; }
-    public Long getDepartmentId() { return departmentId; }
-    public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
+    public Long getMajorId() { return majorId; }
+    public void setMajorId(Long majorId) { this.majorId = majorId; }
     public List<Long> getAdvisorIds() { return advisorIds; }
     public void setAdvisorIds(List<Long> advisorIds) { this.advisorIds = advisorIds; }
 }

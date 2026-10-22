@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 import vn.edu.fit.topicmanagement.common.exception.ResourceNotFoundException;
-import vn.edu.fit.topicmanagement.department.Department;
-import vn.edu.fit.topicmanagement.department.DepartmentService;
+import vn.edu.fit.topicmanagement.major.Major;
+import vn.edu.fit.topicmanagement.major.MajorService;
 import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod;
 import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
 import vn.edu.fit.topicmanagement.user.Role;
@@ -31,17 +31,17 @@ public class TopicService {
 
     private final TopicRepository topics;
     private final RegistrationPeriodService periods;
-    private final DepartmentService departments;
+    private final MajorService majors;
     private final UserAccountService users;
 
     public TopicService(
             TopicRepository topics,
             RegistrationPeriodService periods,
-            DepartmentService departments,
+            MajorService majors,
             UserAccountService users) {
         this.topics = topics;
         this.periods = periods;
-        this.departments = departments;
+        this.majors = majors;
         this.users = users;
     }
 
@@ -52,22 +52,22 @@ public class TopicService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Topic> search(Long roundId, Long departmentId, TopicStatus status,
+    public Page<Topic> search(Long roundId, Long majorId, TopicStatus status,
                               String viewerEmail, int page) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("updatedAt").descending());
-        return topics.search(roundId, departmentId, status, viewerEmail, TopicStatus.PUBLISHED, pageable);
+        return topics.search(roundId, majorId, status, viewerEmail, TopicStatus.PUBLISHED, pageable);
     }
 
     /** GV tạo đề tài (mặc định là bản nháp); submitNow = true sẽ gửi duyệt ngay. */
     public Topic create(String ownerEmail, TopicForm form, boolean submitNow) {
         UserAccount owner = users.getByEmail(ownerEmail.trim());
-        Department department = resolveDepartment(form.getDepartmentId());
+        Major major = resolveMajor(form.getMajorId());
         RegistrationPeriod round = periods.get(form.getRoundId());
         Set<UserAccount> advisors = resolveAdvisors(form.getAdvisorIds());
 
         Topic topic = new Topic();
         topic.setCreatedBy(owner);
-        topic.setDepartment(department);
+        topic.setMajor(major);
         topic.setRound(round);
         topic.setStatus(TopicStatus.DRAFT);
         apply(topic, form, advisors);
@@ -79,7 +79,7 @@ public class TopicService {
         Topic topic = get(id);
         requireOwner(topic, ownerEmail);
         requireEditable(topic);
-        topic.setDepartment(resolveDepartment(form.getDepartmentId()));
+        topic.setMajor(resolveMajor(form.getMajorId()));
         topic.setRound(periods.get(form.getRoundId()));
         Set<UserAccount> advisors = resolveAdvisors(form.getAdvisorIds());
         apply(topic, form, advisors);
@@ -138,7 +138,7 @@ public class TopicService {
         form.setTitle(topic.getTitle());
         form.setDescription(topic.getDescription());
         form.setRoundId(topic.getRound().getId());
-        form.setDepartmentId(topic.getDepartment().getId());
+        form.setMajorId(topic.getMajor() == null ? null : topic.getMajor().getId());
         form.setAdvisorIds(topic.getAdvisors().stream().map(UserAccount::getId).toList());
         return form;
     }
@@ -170,12 +170,13 @@ public class TopicService {
         }
     }
 
-    private Department resolveDepartment(Long id) {
-        Department department = departments.get(id);
-        if (!department.isEnabled()) {
-            throw new BusinessRuleException("Bộ môn đã bị khóa");
+    private Major resolveMajor(Long id) {
+        if (id == null) return null;
+        Major major = majors.get(id);
+        if (!major.isEnabled()) {
+            throw new BusinessRuleException("Chuyên ngành đã bị khóa");
         }
-        return department;
+        return major;
     }
 
     /** Ràng buộc "ít nhất một, tối đa hai GVHD" + GVHD phải là giảng viên đang hoạt động. */

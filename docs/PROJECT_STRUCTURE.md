@@ -9,7 +9,7 @@ src/main/java/vn/edu/fit/topicmanagement/
 ├── auth/                    Đăng nhập
 ├── dashboard/               Trang tổng quan
 ├── user/                    Tài khoản, vai trò, hồ sơ
-├── department/              Bộ môn
+├── major/              Chuyên ngành
 ├── registrationperiod/      Đợt đăng ký
 ├── topic/                   Đề tài và GVHD
 ├── studentgroup/            Nhóm sinh viên và đăng ký đề tài
@@ -21,14 +21,15 @@ src/main/java/vn/edu/fit/topicmanagement/
 
 src/main/resources/
 ├── application.properties
-├── db/migration/            Flyway SQL
+├── db/migration/common/     Flyway SQL dùng chung
+├── db/migration/postgresql/ SQL riêng PostgreSQL
 └── static/                  CSS, JavaScript, hình ảnh
 
 src/main/webapp/WEB-INF/views/
 ├── common/                  Header, footer, thông báo
 ├── auth/                    Đăng nhập
 ├── profile/                 Hồ sơ cá nhân
-├── admin/                   Tài khoản và bộ môn
+├── admin/                   Tài khoản và chuyên ngành
 ├── registration-period/     Đợt đăng ký
 ├── topic/                   Đề tài
 ├── student-group/           Nhóm sinh viên
