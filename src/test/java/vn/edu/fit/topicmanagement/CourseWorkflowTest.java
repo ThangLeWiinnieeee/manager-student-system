@@ -699,6 +699,15 @@ class CourseWorkflowTest {
         evaluate(reg, teacher, 3);
         login(reviewer);
         assertThrows(BusinessRuleException.class, () -> evaluations.evaluate(reg.getId(), score(4), reviewer.getEmail()));
+        login(dean);
+        var schedule = windowService.toForm(course.getPeriod());
+        schedule.setSvEnd(LocalDateTime.now().minusHours(1));
+        schedule.setGvpbDeadline(LocalDateTime.now().plusDays(5));
+        var extended = windowService.update(course.getPeriod().getId(), schedule);
+        assertEquals("Đang chấm phản biện", extended.getStage());
+        assertPageAs(dean, "/admin/registration-periods/" + extended.getId(), "Đang chấm phản biện");
+        evaluate(reg, reviewer, 4);
+        assertThrows(BusinessRuleException.class, () -> evaluations.evaluate(reg.getId(), score(3), reviewer.getEmail()));
     }
 
     @Test

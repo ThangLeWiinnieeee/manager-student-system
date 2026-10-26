@@ -39,6 +39,29 @@ class RegistrationPeriodTest {
         }
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = RoundType.class, names = {"TLCN", "KLTN"})
+    void extendingReviewerDeadlineReopensGradingStageOnly(RoundType type) {
+        var period = period();
+        period.setType(type);
+        var now = period.getSvEnd().plusDays(2);
+        period.setGvpbDeadline(now.minusDays(1));
+        try (var time = mockStatic(LocalDateTime.class)) {
+            time.when(LocalDateTime::now).thenReturn(now);
+            assertEquals("Đã hết hạn chấm phản biện", period.getStage());
+            assertFalse(period.isReviewerGradingOpen());
+            period.setGvpbDeadline(now.plusDays(1));
+            assertEquals("Đang chấm phản biện", period.getStage());
+            assertTrue(period.isReviewerGradingOpen());
+            assertFalse(period.isSvWindowOpen(now));
+            assertTrue(period.isEnded());
+            time.when(LocalDateTime::now).thenReturn(period.getGvpbDeadline());
+            assertTrue(period.isReviewerGradingOpen());
+            time.when(LocalDateTime::now).thenReturn(period.getGvpbDeadline().plusNanos(1));
+            assertFalse(period.isReviewerGradingOpen());
+        }
+    }
+
     private RegistrationPeriod period() {
         var period = new RegistrationPeriod();
         period.setGvStart(LocalDateTime.of(2026, 10, 1, 8, 0));

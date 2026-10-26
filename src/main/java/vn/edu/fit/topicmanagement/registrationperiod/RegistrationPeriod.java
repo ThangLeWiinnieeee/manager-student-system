@@ -51,12 +51,21 @@ public class RegistrationPeriod {
     public boolean isSvWindowOpen(LocalDateTime now) { return !now.isBefore(svStart) && !now.isAfter(svEnd); }
     public boolean isGvOpen() { return isGvWindowOpen(LocalDateTime.now()); }
     public boolean isEnded() { return LocalDateTime.now().isAfter(svEnd); }
+    public boolean isReviewerGradingOpen() {
+        LocalDateTime now = LocalDateTime.now();
+        return type != null && type.requiresGvpbDeadline() && gvpbDeadline != null
+                && now.isAfter(svEnd) && !now.isAfter(gvpbDeadline);
+    }
     public String getStage() {
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(gvStart)) return "Sắp mở";
         if (isGvWindowOpen(now)) return "GV đang đăng ký";
         if (now.isBefore(svStart)) return "Chờ giai đoạn SV";
-        return !now.isAfter(svEnd) ? "SV đang đăng ký" : "Đã kết thúc";
+        if (!now.isAfter(svEnd)) return "SV đang đăng ký";
+        if (isReviewerGradingOpen()) return "Đang chấm phản biện";
+        if (type != null && type.requiresGvpbDeadline() && gvpbDeadline != null)
+            return "Đã hết hạn chấm phản biện";
+        return "Đã kết thúc";
     }
     public String getGvStartText() { return gvStart.format(DISPLAY); }
     public String getGvEndText() { return gvEnd.format(DISPLAY); }
