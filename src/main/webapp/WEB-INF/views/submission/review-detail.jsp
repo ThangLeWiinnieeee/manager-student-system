@@ -73,7 +73,7 @@
         <h2>Lịch sử nộp báo cáo</h2>
 
         <span class="neutral-badge">
-            Tệp PDF
+            Tệp báo cáo
         </span>
 
     </div>
@@ -130,7 +130,7 @@
 
                             <a class="button"
                                href="<c:url value='/review/submissions/groups/${groupInfo.groupId}/files/${report.reportId}/download'/>">
-                                Tải PDF
+                                Tải báo cáo
                             </a>
 
                         </td>

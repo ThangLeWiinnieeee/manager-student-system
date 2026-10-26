@@ -1,16 +1,10 @@
 
 package vn.edu.fit.topicmanagement.submission;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
 
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -37,15 +31,14 @@ public class ReportReviewService {
     private final ReportSubmissionRepository reports;
     private final GroupTopicRegistrationRepository registrations;
     private final UserAccountService users;
-    private final Path storageRoot;
+    private final ReportStorage storage;
     private final vn.edu.fit.topicmanagement.council.TopicAssignmentRepository assignments;
 
     public ReportReviewService(
             ReportSubmissionRepository reports,
             GroupTopicRegistrationRepository registrations,
             UserAccountService users,
-            @Value("${app.submission.storage-dir}")
-            String storageDir,
+            ReportStorage storage,
             vn.edu.fit.topicmanagement.council.TopicAssignmentRepository assignments) {
 
         this.reports = reports;
@@ -53,9 +46,7 @@ public class ReportReviewService {
         this.users = users;
         this.assignments = assignments;
 
-        this.storageRoot = Path.of(storageDir)
-                .toAbsolutePath()
-                .normalize();
+        this.storage = storage;
     }
 
     // =========================================
@@ -110,6 +101,9 @@ public class ReportReviewService {
         if (isDean()) {
             return true;
         }
+
+        var lecturer = registration.getTopic().getRound().getLecturer();
+        if (lecturer != null && lecturer.getId().equals(user.getId())) return true;
 
         // Giang vien chi xem de tai minh huong dan
         var assignment = assignments.findByRegistration_Id(registration.getId()).orElse(null);
@@ -235,33 +229,6 @@ public class ReportReviewService {
     }
 
     // =========================================
-    // KIEM TRA DUONG DAN FILE
-    // =========================================
-
-    private Path resolveFile(String storedFilename) {
-
-        // Dinh dang ten file do module upload tao
-        if (storedFilename == null ||
-                !storedFilename.matches(
-                        "[0-9a-fA-F-]{36}\\.pdf")) {
-
-            throw new ResourceNotFoundException(
-                    "Tên tệp lưu trữ không hợp lệ");
-        }
-
-        Path target = storageRoot
-                .resolve(storedFilename)
-                .normalize();
-
-        if (!target.startsWith(storageRoot)) {
-            throw new ResourceNotFoundException(
-                    "Đường dẫn tệp không hợp lệ");
-        }
-
-        return target;
-    }
-
-    // =========================================
     // DEAN / LECTURER TAI BAO CAO
     // =========================================
 
@@ -281,19 +248,8 @@ public class ReportReviewService {
                         new ResourceNotFoundException(
                                 "Không tìm thấy báo cáo"));
 
-        Path target = resolveFile(
-                report.getStoredFilename());
-
-        if (!Files.isRegularFile(
-                target,
-                LinkOption.NOFOLLOW_LINKS)) {
-
-            throw new ResourceNotFoundException(
-                    "Tệp báo cáo không tồn tại");
-        }
-
         return new DownloadReport(
-                new FileSystemResource(target),
+                storage.read(report.getStoredFilename()),
                 report.getOriginalFilename(),
                 report.getSizeBytes()
         );

@@ -317,6 +317,49 @@ class CourseWorkflowTest {
     }
 
     @Test
+    void lecturerReviewsOnlyStudentProposalsFromTheirOwnClasses() {
+        var ownCourse = round(RegistrationMode.SELF_PROPOSED, 3);
+        var ownGroup = group(first, ownCourse);
+        var proposal = new ProposalForm();
+        proposal.setTitle("Lecturer review proposal");
+        proposal.setDescription("Proposal assigned to the course lecturer");
+        login(first);
+        var ownRegistration = registrations.propose(ownGroup.getId(), proposal);
+
+        var otherLecturer = user(Role.LECTURER);
+        var originalTeacher = teacher;
+        teacher = otherLecturer;
+        var otherCourse = round(RegistrationMode.SELF_PROPOSED, 3);
+        var otherGroup = group(second, otherCourse);
+        proposal.setTitle("Other lecturer proposal");
+        login(second);
+        var otherRegistration = registrations.propose(otherGroup.getId(), proposal);
+        teacher = originalTeacher;
+
+        var ownPage = requestAs(originalTeacher, "/dean/group-topic-registrations", null);
+        assertEquals(200, ownPage.statusCode());
+        assertTrue(ownPage.body().contains("Lecturer review proposal"));
+        assertFalse(ownPage.body().contains("Other lecturer proposal"));
+        var otherPage = requestAs(otherLecturer, "/dean/group-topic-registrations", null);
+        assertEquals(200, otherPage.statusCode());
+        assertFalse(otherPage.body().contains("Lecturer review proposal"));
+        assertTrue(otherPage.body().contains("Other lecturer proposal"));
+
+        login(otherLecturer);
+        assertThrows(AccessDeniedException.class, () -> registrations.approve(ownRegistration.getId()));
+        login(originalTeacher);
+        registrations.approve(ownRegistration.getId());
+        assertEquals(GroupTopicRegistrationStatus.APPROVED,
+                registrationRepository.findById(ownRegistration.getId()).orElseThrow().getStatus());
+        assertEquals(originalTeacher.getId(), registrationRepository.findById(ownRegistration.getId())
+                .orElseThrow().getReviewedBy().getId());
+        login(otherLecturer);
+        registrations.reject(otherRegistration.getId(), "Please revise the proposed scope");
+        assertEquals(GroupTopicRegistrationStatus.REJECTED,
+                registrationRepository.findById(otherRegistration.getId()).orElseThrow().getStatus());
+    }
+
+    @Test
     void proposalPagesFollowReviewStatusAndStudentWindow() {
         var course = round(RegistrationMode.SELF_PROPOSED, 3);
         var group = group(first, course);
@@ -360,6 +403,31 @@ class CourseWorkflowTest {
     }
 
     @Test
+    void myGroupsSeparatesClassesAndPreselectsTheRequestedClass() {
+        var firstCourse = round(RegistrationMode.SHARED, 3);
+        var secondCourse = round(RegistrationMode.SHARED, 3);
+        var firstGroup = group(first, firstCourse);
+        join(first, secondCourse);
+        var page = requestAs(first, "/student/my-groups", null);
+        assertEquals(200, page.statusCode());
+        var firstCard = java.util.regex.Pattern.compile("(?s)id=\"course-" + firstCourse.getId() + "\".*?</section>").matcher(page.body());
+        var secondCard = java.util.regex.Pattern.compile("(?s)id=\"course-" + secondCourse.getId() + "\".*?</section>").matcher(page.body());
+        assertTrue(firstCard.find()); assertTrue(secondCard.find());
+        assertTrue(firstCard.group().contains("/student/my-groups/" + firstGroup.getId() + "\""));
+        assertFalse(secondCard.group().contains("/student/my-groups/" + firstGroup.getId() + "\""));
+        assertTrue(secondCard.group().contains("new?roundId=" + secondCourse.getId()));
+        var create = requestAs(first, "/student/my-groups/new?roundId=" + secondCourse.getId(), null);
+        assertEquals(200, create.statusCode());
+        assertTrue(java.util.regex.Pattern.compile("value=\"" + secondCourse.getId() + "\"\\s+selected=\"selected\"").matcher(create.body()).find());
+        var secondGroup = group(first, secondCourse);
+        var updated = requestAs(first, "/student/my-groups", null);
+        assertEquals(200, updated.statusCode());
+        assertTrue(updated.body().contains("/student/my-groups/" + firstGroup.getId() + "\""));
+        assertTrue(updated.body().contains("/student/my-groups/" + secondGroup.getId() + "\""));
+        assertFalse(updated.body().contains("Tạo nhóm trong lớp này"));
+    }
+
+    @Test
     void closedWindowAndWrongRoundCannotBeBypassed() {
         var round = round(RegistrationMode.EXCLUSIVE, 3);
         var group = group(first, round);
@@ -398,9 +466,9 @@ class CourseWorkflowTest {
         login(president);
         assertThrows(BusinessRuleException.class, () -> evaluations.evaluate(ra.getId(), score(4), president.getEmail()));
         login(first);
-        var report = submissions.upload(a.getId(), pdf());
+        var report = submissions.upload(a.getId(), zipReport());
         login(second);
-        submissions.upload(b.getId(), pdf());
+        submissions.upload(b.getId(), zipReport());
         assertThrows(AccessDeniedException.class, () -> submissions.download(a.getId(), report.getId()));
         login(president);
         assertNotNull(reports.download(a.getId(), report.getId()));
@@ -412,7 +480,7 @@ class CourseWorkflowTest {
         evaluate(rb, member, 1);
         assertEquals(3, evaluationRepository.findByRegistration_Id(ra.getId()).size());
         login(first);
-        assertThrows(BusinessRuleException.class, () -> submissions.upload(a.getId(), pdf()));
+        assertThrows(BusinessRuleException.class, () -> submissions.upload(a.getId(), zipReport()));
         login(president);
         assertThrows(BusinessRuleException.class, () -> evaluations.evaluate(ra.getId(), score(3), president.getEmail()));
         assertEquals(new BigDecimal("8.00"), results.confirmByPresident(ra.getId(), "Passed", president.getEmail()).getFinalScore());
@@ -447,7 +515,7 @@ class CourseWorkflowTest {
         var group = group(first, round);
         login(first);
         var registration = registrations.register(group.getId(), topic.getId());
-        submissions.upload(group.getId(), pdf());
+        submissions.upload(group.getId(), zipReport());
         var president = user(Role.LECTURER);
         var secretary = user(Role.LECTURER);
         var member = user(Role.LECTURER);
@@ -824,7 +892,7 @@ class CourseWorkflowTest {
         var topic = publishedTopic(course);
         var group = group(student, course);
         var reg = registrations.register(group.getId(), topic.getId());
-        submissions.upload(group.getId(), pdf());
+        submissions.upload(group.getId(), zipReport());
         return reg;
     }
 
@@ -887,7 +955,7 @@ class CourseWorkflowTest {
         login(first); groups.addMemberByLeader(group.getId(), second.getEmail());
         login(second); groups.respondToInvitation(group.getId(), true);
         login(first); var reg=registrations.register(group.getId(), topic.getId());
-        var original=submissions.upload(group.getId(), pdf());
+        var original=submissions.upload(group.getId(), zipReport());
         login(user(Role.LECTURER));
         assertThrows(AccessDeniedException.class, () -> groups.assignLeader(group.getId(), second.getId()));
         login(teacher); groups.assignLeader(group.getId(), second.getId());
@@ -895,10 +963,10 @@ class CourseWorkflowTest {
         assertThrows(BusinessRuleException.class, () -> groups.removeMember(group.getId(), first.getId()));
         assertEquals(1, handoverHistory.findByCourse(course.getId()).size());
         login(first); assertFalse(groups.isMyGroupLeader(group.getId()));
-        assertThrows(AccessDeniedException.class, () -> submissions.upload(group.getId(), pdf()));
+        assertThrows(AccessDeniedException.class, () -> submissions.upload(group.getId(), zipReport()));
         login(second); assertTrue(groups.isMyGroupLeader(group.getId()));
         assertNotNull(submissions.download(group.getId(), original.getId()));
-        submissions.upload(group.getId(), pdf());
+        submissions.upload(group.getId(), zipReport());
         var reviewer=user(Role.LECTURER); assign(reg, null, reviewer); evaluate(reg, reviewer, 4);
         login(dean); results.publish(reg.getId());
         login(teacher); assertThrows(BusinessRuleException.class, () -> groups.assignLeader(group.getId(), first.getId()));
@@ -934,7 +1002,7 @@ class CourseWorkflowTest {
     void reviewerHandoverKeepsOldDraftAndNewLecturerCanFinishAndPublish() {
         var course=round(RegistrationMode.SHARED, 3); var topic=publishedTopic(course);
         var group=group(first, course); var reg=registrations.register(group.getId(), topic.getId());
-        submissions.upload(group.getId(), pdf());
+        submissions.upload(group.getId(), zipReport());
         var old=user(Role.LECTURER); var replacement=user(Role.LECTURER); assign(reg,null,old);
         var draft=score(0); draft.setAction("draft"); login(old);
         evaluations.evaluate(reg.getId(),draft,old.getEmail());
@@ -957,7 +1025,7 @@ class CourseWorkflowTest {
         var course=round(RegistrationMode.SHARED,3);
         course.getPeriod().setType(RoundType.TLCN); course.getPeriod().setGvpbDeadline(LocalDateTime.now().plusDays(3)); windows.save(course.getPeriod());
         var topic=publishedTopic(course); var group=group(first,course);
-        var reg=registrations.register(group.getId(),topic.getId()); submissions.upload(group.getId(),pdf());
+        var reg=registrations.register(group.getId(),topic.getId()); submissions.upload(group.getId(),zipReport());
         var reviewer=user(Role.LECTURER); var replacement=user(Role.LECTURER);
         login(dean); var form=new TopicAssignmentForm(); form.setRegistrationId(reg.getId());
         form.setReviewerId(reviewer.getId()); form.setSupporterId(teacher.getId()); councils.assignTopic(form);
@@ -974,8 +1042,8 @@ class CourseWorkflowTest {
     void councilHandoverIsPerGroupAndPreservesOtherGroupsAndSubmittedScores() {
         var course=round(RegistrationMode.SHARED,3); course.getPeriod().setType(RoundType.NCKH); windows.save(course.getPeriod());
         var topic=publishedTopic(course); var a=group(first,course);
-        var ra=registrations.register(a.getId(),topic.getId()); submissions.upload(a.getId(),pdf());
-        var b=group(second,course); var rb=registrations.register(b.getId(),topic.getId()); submissions.upload(b.getId(),pdf());
+        var ra=registrations.register(a.getId(),topic.getId()); submissions.upload(a.getId(),zipReport());
+        var b=group(second,course); var rb=registrations.register(b.getId(),topic.getId()); submissions.upload(b.getId(),zipReport());
         var president=user(Role.LECTURER); var secretary=user(Role.LECTURER); var old=user(Role.LECTURER);
         var replacement=user(Role.LECTURER); var council=council(course,president,secretary,old);
         assign(ra,council,null); assign(rb,council,null);
@@ -1100,8 +1168,42 @@ class CourseWorkflowTest {
         evaluations.evaluate(registration.getId(), score(content), lecturer.getEmail());
     }
 
-    MockMultipartFile pdf() {
-        return new MockMultipartFile("file", "report.pdf", "application/pdf", "%PDF-1.7\nTest report\n%%EOF".getBytes(StandardCharsets.US_ASCII));
+    @Test
+    void courseLecturerDownloadsZipWithoutBeingAdvisorOrGrader() throws Exception {
+        var course = round(RegistrationMode.SHARED, 3);
+        var topic = publishedTopic(course);
+        topic.setAdvisors(Set.of(user(Role.LECTURER)));
+        topics.save(topic);
+        var group = group(first, course);
+        login(first);
+        registrations.register(group.getId(), topic.getId());
+        var zip = zipReport();
+        assertThrows(BusinessRuleException.class, () -> submissions.upload(group.getId(),
+                new MockMultipartFile("file", "fake.zip", "application/zip", "not a zip".getBytes())));
+        assertThrows(BusinessRuleException.class, () -> submissions.upload(group.getId(),
+                new MockMultipartFile("file", "old.pdf", "application/pdf", "%PDF-test".getBytes())));
+        var report = submissions.upload(group.getId(), zip);
+        assertEquals("application/zip", report.getContentType());
+        login(teacher);
+        assertArrayEquals(zip.getBytes(), reports.download(group.getId(), report.getId()).resource().getContentAsByteArray());
+        String path = "/review/submissions/groups/" + group.getId() + "/files/" + report.getId() + "/download";
+        var response = requestAs(teacher, path, null);
+        assertEquals(200, response.statusCode());
+        assertEquals("application/zip", response.headers().firstValue("Content-Type").orElseThrow());
+        assertTrue(response.headers().firstValue("Content-Disposition").orElseThrow().contains("attachment"));
+        assertEquals(403, requestAs(user(Role.LECTURER), path, null).statusCode());
+    }
+
+    MockMultipartFile zipReport() {
+        try {
+            var bytes = new java.io.ByteArrayOutputStream();
+            try (var zip = new java.util.zip.ZipOutputStream(bytes)) {
+                zip.putNextEntry(new java.util.zip.ZipEntry("report.txt"));
+                zip.write("Test report".getBytes(StandardCharsets.UTF_8));
+                zip.closeEntry();
+            }
+            return new MockMultipartFile("file", "report.zip", "application/zip", bytes.toByteArray());
+        } catch (java.io.IOException ex) { throw new AssertionError(ex); }
     }
 
     List<Boolean> race(Callable<Boolean> first, Callable<Boolean> second) throws Exception {

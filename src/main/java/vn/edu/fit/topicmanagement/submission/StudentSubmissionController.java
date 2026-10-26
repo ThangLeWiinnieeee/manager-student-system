@@ -135,7 +135,8 @@ public class StudentSubmissionController {
                         .toString();
 
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
+                .contentType(file.filename().toLowerCase(java.util.Locale.ROOT).endsWith(".zip")
+                        ? MediaType.parseMediaType("application/zip") : MediaType.APPLICATION_PDF)
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
                         disposition)

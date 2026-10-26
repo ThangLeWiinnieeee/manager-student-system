@@ -91,6 +91,9 @@ public class SecurityConfig {
                                 "DEAN"
                         )
 
+                        .requestMatchers("/dean/group-topic-registrations", "/dean/group-topic-registrations/**")
+                        .hasAnyRole("DEAN", "ADMIN", "LECTURER")
+
                         // TV4:
                         .requestMatchers("/dean/**")
                         .hasAnyRole("DEAN", "ADMIN")

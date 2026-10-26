@@ -134,7 +134,8 @@ public class UserAccountService {
         account.setEmail(email);
         account.setRole(form.getRole());
         account.setEnabled(form.isEnabled());
-        account.setDepartment(form.getRole() == Role.STUDENT ? resolveDepartment(form.getDepartmentId()) : null);
+        account.setDepartment(form.getRole() == Role.STUDENT || form.getRole() == Role.LECTURER
+                ? resolveDepartment(form.getDepartmentId()) : null);
     }
 
     private Department resolveDepartment(Long id) {

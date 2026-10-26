@@ -144,8 +144,8 @@ class UserAccountServiceTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Role.class, names = {"ADMIN", "DEAN", "LECTURER"})
-    void nonStudentAccountNeverHasDepartment(Role role) {
+    @EnumSource(value = Role.class, names = {"ADMIN", "DEAN"})
+    void managementAccountNeverHasDepartment(Role role) {
         UserCreateForm form = new UserCreateForm();
         form.setEmail("admin@fit.edu.vn");
         form.setFullName("Quản trị hệ thống");

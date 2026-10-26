@@ -280,7 +280,7 @@
             <%-- DEAN XET DUYET DANG KY DE TAI CUA NHOM  --%>
             <%-- ========================================= --%>
 
-            <c:if test="${pageContext.request.isUserInRole('DEAN')}">
+            <c:if test="${pageContext.request.isUserInRole('DEAN') or pageContext.request.isUserInRole('LECTURER')}">
 
                 <a class="nav-link"
                    href="<c:url value='/dean/group-topic-registrations'/>"
