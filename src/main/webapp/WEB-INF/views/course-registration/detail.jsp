@@ -5,7 +5,7 @@
 <div class="page-heading">
     <div>
         <h1><c:out value="${period.name}" /></h1>
-        <span class="badge ${period.ended ? 'inactive' : 'active'}"><c:out value="${period.stage}" /></span>
+        <span class="badge ${period.ended and not period.reviewerGradingOpen ? 'inactive' : 'active'}"><c:out value="${period.stage}" /></span>
     </div>
     <div class="actions">
         <a class="button" href="<c:url value='/course-registrations'/>">Về danh sách</a>

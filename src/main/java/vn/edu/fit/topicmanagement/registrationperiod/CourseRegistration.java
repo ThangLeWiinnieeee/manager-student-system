@@ -78,6 +78,7 @@ public class CourseRegistration {
     public String getGvpbDeadlineText() { return period.getGvpbDeadlineText(); }
     public String getCouncilReportDateText() { return period.getCouncilReportDateText(); }
     public String getStage() { return period.getStage(); }
+    public boolean isReviewerGradingOpen() { return period.isReviewerGradingOpen(); }
     public boolean isGvWindowOpen(LocalDateTime now) { return period.isGvWindowOpen(now); }
     public boolean isSvWindowOpen(LocalDateTime now) { return period.isSvWindowOpen(now); }
     public boolean isEnded() { return period.isEnded(); }

@@ -25,7 +25,7 @@
                     <td><strong><c:out value="${period.name}" /> (#<c:out value="${period.id}" />)</strong></td>
                     <td><c:out value="${period.type.displayName}" /></td>
                     <td>
-                        <span class="badge ${period.ended ? 'inactive' : 'active'}">
+                        <span class="badge ${period.ended and not period.reviewerGradingOpen ? 'inactive' : 'active'}">
                             <c:out value="${period.stage}" />
                         </span>
                     </td>
