@@ -4,18 +4,12 @@ package vn.edu.fit.topicmanagement.submission;
 import java.io.IOException;
 import java.io.InputStream;
 
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -48,15 +42,14 @@ public class ReportSubmissionService {
     private static final long MAX_FILE_SIZE =
             10L * 1024 * 1024;
 
-    private static final byte[] PDF_SIGNATURE =
-            "%PDF-".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] ZIP_SIGNATURE = {80, 75, 3, 4};
 
     private final ReportSubmissionRepository reports;
     private final StudentGroupService groups;
     private final GroupTopicRegistrationService registrations;
     private final UserAccountService users;
 
-    private final Path storageRoot;
+    private final ReportStorage storage;
     private final vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService periods;
     private final vn.edu.fit.topicmanagement.evaluation.EvaluationRepository evaluations;
     private final vn.edu.fit.topicmanagement.result.TopicFinalResultRepository results;
@@ -66,8 +59,7 @@ public class ReportSubmissionService {
             StudentGroupService groups,
             GroupTopicRegistrationService registrations,
             UserAccountService users,
-            @Value("${app.submission.storage-dir}")
-            String storageDir,
+            ReportStorage storage,
             vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService periods,
             vn.edu.fit.topicmanagement.evaluation.EvaluationRepository evaluations,
             vn.edu.fit.topicmanagement.result.TopicFinalResultRepository results) {
@@ -80,10 +72,7 @@ public class ReportSubmissionService {
         this.evaluations = evaluations;
         this.results = results;
 
-        this.storageRoot =
-                Path.of(storageDir)
-                        .toAbsolutePath()
-                        .normalize();
+        this.storage = storage;
     }
 
     // =========================================
@@ -124,10 +113,10 @@ public class ReportSubmissionService {
     }
 
     // =========================================
-    // KIEM TRA TEP PDF
+    // KIEM TRA TEP ZIP
     // =========================================
 
-    private String validatePdf(MultipartFile file) {
+    private String validateZip(MultipartFile file) {
 
         if (file == null || file.isEmpty()) {
             throw new BusinessRuleException(
@@ -163,20 +152,20 @@ public class ReportSubmissionService {
         }
 
         if (!original.toLowerCase(Locale.ROOT)
-                .endsWith(".pdf")) {
+                .endsWith(".zip")) {
 
             throw new BusinessRuleException(
-                    "Chỉ chấp nhận tệp PDF");
+                    "Chỉ chấp nhận tệp ZIP");
         }
 
-        // Kiem tra chu ky PDF co ban
+        // Check the signature without trusting the browser's MIME type.
         try (InputStream input = file.getInputStream()) {
 
-            byte[] header = input.readNBytes(5);
+            byte[] header = input.readNBytes(4);
 
-            if (!Arrays.equals(header, PDF_SIGNATURE)) {
+            if (!Arrays.equals(header, ZIP_SIGNATURE)) {
                 throw new BusinessRuleException(
-                        "Nội dung tệp không đúng định dạng PDF");
+                        "Nội dung tệp không đúng định dạng ZIP hoặc ZIP trống");
             }
 
         } catch (IOException ex) {
@@ -184,24 +173,13 @@ public class ReportSubmissionService {
                     "Không thể đọc tệp báo cáo");
         }
 
-        return original;
-    }
-
-    // =========================================
-    // TAO DUONG DAN AN TOAN
-    // =========================================
-
-    private Path resolveFile(String storedFilename) {
-
-        Path target =
-                storageRoot.resolve(storedFilename).normalize();
-
-        if (!target.startsWith(storageRoot)) {
-            throw new BusinessRuleException(
-                    "Đường dẫn tệp không hợp lệ");
+        try (var zip = new java.util.zip.ZipInputStream(file.getInputStream())) {
+            if (zip.getNextEntry() == null) throw new BusinessRuleException("Tệp ZIP phải chứa báo cáo hoặc mã nguồn");
+        } catch (IOException | IllegalArgumentException ex) {
+            throw new BusinessRuleException("Không thể đọc nội dung tệp ZIP");
         }
 
-        return target;
+        return original;
     }
 
     // =========================================
@@ -228,30 +206,14 @@ public class ReportSubmissionService {
         if (!evaluations.findByRegistration_Id(registrationId).isEmpty() || results.findByRegistration_Id(registrationId).isPresent())
             throw new BusinessRuleException("Nhóm đã bắt đầu được chấm: báo cáo đã khóa");
 
-        String originalFilename = validatePdf(file);
+        String originalFilename = validateZip(file);
 
         UserAccount uploader = currentStudent();
 
         String storedFilename =
-                UUID.randomUUID() + ".pdf";
+                UUID.randomUUID() + ".zip";
 
-        Path target = resolveFile(storedFilename);
-
-        try {
-
-            Files.createDirectories(storageRoot);
-
-            try (InputStream input =
-                         file.getInputStream()) {
-
-                Files.copy(input, target);
-            }
-
-        } catch (IOException ex) {
-
-            throw new BusinessRuleException(
-                    "Không thể lưu tệp báo cáo");
-        }
+        storage.save(storedFilename, file);
 
         // Xoa tep neu transaction database rollback
         TransactionSynchronizationManager
@@ -264,8 +226,8 @@ public class ReportSubmissionService {
                                 if (status != STATUS_COMMITTED) {
 
                                     try {
-                                        Files.deleteIfExists(target);
-                                    } catch (IOException ignored) {
+                                        storage.delete(storedFilename);
+                                    } catch (RuntimeException ignored) {
                                         // Tep se can duoc don dep thu cong
                                     }
                                 }
@@ -279,7 +241,7 @@ public class ReportSubmissionService {
         report.setOriginalFilename(originalFilename);
         report.setStoredFilename(storedFilename);
         report.setSizeBytes(file.getSize());
-        report.setContentType("application/pdf");
+        report.setContentType("application/zip");
 
         return reports.save(report);
     }
@@ -329,18 +291,8 @@ public class ReportSubmissionService {
                         new ResourceNotFoundException(
                                 "Không tìm thấy báo cáo"));
 
-        Path target =
-                resolveFile(report.getStoredFilename());
-
-        if (!Files.isRegularFile(
-                target, LinkOption.NOFOLLOW_LINKS)) {
-
-            throw new ResourceNotFoundException(
-                    "Tệp báo cáo không còn tồn tại");
-        }
-
         return new DownloadReport(
-                new FileSystemResource(target),
+                storage.read(report.getStoredFilename()),
                 report.getOriginalFilename(),
                 report.getSizeBytes()
         );

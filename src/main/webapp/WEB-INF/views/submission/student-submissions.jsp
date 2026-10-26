@@ -83,7 +83,7 @@
         </div>
 
         <p>
-            Chọn báo cáo định dạng PDF,
+            Chọn tệp ZIP chứa báo cáo và mã nguồn,
             dung lượng tối đa 10 MB.
             Mỗi lần nộp sẽ được lưu vào lịch sử.
         </p>
@@ -94,13 +94,13 @@
               action="<c:url value='/student/my-groups/${group.id}/submissions'/>">
 
             <label for="reportFile">
-                Chọn tệp báo cáo PDF
+                Chọn tệp báo cáo ZIP
             </label>
 
             <input type="file"
                    id="reportFile"
                    name="file"
-                   accept=".pdf,application/pdf"
+                   accept=".zip,application/zip,application/x-zip-compressed"
                    required>
 
             <input type="hidden"

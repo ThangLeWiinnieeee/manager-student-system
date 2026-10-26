@@ -121,13 +121,22 @@ public class GroupTopicRegistrationService {
         return registration;
     }
 
-    @PreAuthorize("hasAnyRole('DEAN','ADMIN')")
+    @PreAuthorize("hasAnyRole('DEAN','ADMIN','LECTURER')")
     @Transactional(readOnly = true)
-    public List<GroupTopicRegistration> findAllForDean() { return registrations.findAllByOrderBySubmittedAtDesc(); }
+    public List<GroupTopicRegistration> findReviewable() {
+        var all = registrations.findAllByOrderBySubmittedAtDesc();
+        if (CourseRegistrationService.isManager()) return all;
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        return all.stream().filter(registration -> auth != null
+                && registration.getTopic().getRound().getLecturer() != null
+                && registration.getTopic().getRound().getLecturer().getEmail().equalsIgnoreCase(auth.getName()))
+                .toList();
+    }
 
-    @PreAuthorize("hasAnyRole('DEAN','ADMIN')")
+    @PreAuthorize("hasAnyRole('DEAN','ADMIN','LECTURER')")
     public void approve(Long id) {
         var registration = pending(id);
+        assertCanReview(registration);
         Topic topic = registration.getTopic();
         if (topic.getAdvisors().isEmpty() || topic.getAdvisors().size() > 2 || topic.getDepartment() == null)
             throw new BusinessRuleException("Đề tài cần bộ môn và 1–2 GVHD trước khi duyệt");
@@ -141,11 +150,12 @@ public class GroupTopicRegistrationService {
         stampReview(registration);
     }
 
-    @PreAuthorize("hasAnyRole('DEAN','ADMIN')")
+    @PreAuthorize("hasAnyRole('DEAN','ADMIN','LECTURER')")
     public void reject(Long id, String reason) {
         if (reason == null || reason.isBlank() || reason.length() > 500)
             throw new BusinessRuleException("Vui lòng nhập lý do từ chối, tối đa 500 ký tự");
         var registration = pending(id);
+        assertCanReview(registration);
         registration.setStatus(GroupTopicRegistrationStatus.REJECTED);
         registration.setRejectionReason(reason.trim());
         if (registration.getTopic().getProposedGroupId() != null) {
@@ -166,5 +176,14 @@ public class GroupTopicRegistrationService {
     private void stampReview(GroupTopicRegistration registration) {
         registration.setReviewedBy(users.getByEmail(SecurityContextHolder.getContext().getAuthentication().getName()));
         registration.setReviewedAt(Instant.now());
+    }
+
+    private void assertCanReview(GroupTopicRegistration registration) {
+        if (CourseRegistrationService.isManager()) return;
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        var lecturer = registration.getTopic().getRound().getLecturer();
+        if (auth == null || lecturer == null || !lecturer.getEmail().equalsIgnoreCase(auth.getName())) {
+            throw new AccessDeniedException("Bạn chỉ được xét duyệt đề xuất của lớp mình phụ trách");
+        }
     }
 }

@@ -160,7 +160,7 @@ class ApplicationWebTest {
         form.setPassword("AdvisorPassword123!");
         form.setDepartmentId(department.getId());
         UserAccount lecturer = accounts.create(form);
-        assertNull(users.findById(lecturer.getId()).orElseThrow().getDepartment());
+        assertEquals(department.getId(), users.findById(lecturer.getId()).orElseThrow().getDepartment().getId());
 
         var round = new vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration();
         round.setPeriod(new vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod());
@@ -371,6 +371,34 @@ class ApplicationWebTest {
         } finally {
             windows.deleteAll(java.util.List.of(lecturer, student));
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Role.class, names = {"STUDENT", "LECTURER"})
+    void accountDepartmentChangesPersistThroughEditForm(Role role) throws Exception {
+        login("admin@example.test", "AdminPassword123!");
+        var available = departments.findAll().stream().filter(Department::isEnabled).toList();
+        var initial = available.get(0);
+        var replacement = available.get(1);
+        var email = "department-" + java.util.UUID.randomUUID() + "@example.test";
+        var fields = new java.util.HashMap<>(Map.of("fullName", "Department change test", "email", email,
+                "role", role.name(), "enabled", "true", "departmentId", initial.getId().toString(),
+                "password", "DepartmentPassword123!"));
+        assertPage(submit("/admin/users/new", "/admin/users", fields), "Đã tạo tài khoản");
+        var account = users.findByEmailIgnoreCase(email).orElseThrow();
+        assertEquals(initial.getId(), account.getDepartment().getId());
+        String path = "/admin/users/" + account.getId();
+        fields.remove("password");
+        fields.put("departmentId", replacement.getId().toString());
+        assertPage(submit(path + "/edit", path, fields), "Đã cập nhật tài khoản");
+        assertEquals(replacement.getId(), users.findById(account.getId()).orElseThrow().getDepartment().getId());
+        var edit = get(path + "/edit");
+        assertEquals(200, edit.statusCode());
+        var selected = Pattern.compile("<option value=\"" + replacement.getId() + "\"[^>]*selected=\"selected\"");
+        assertTrue(selected.matcher(edit.body()).find());
+        fields.put("departmentId", "");
+        assertPage(submit(path + "/edit", path, fields), "Đã cập nhật tài khoản");
+        assertNull(users.findById(account.getId()).orElseThrow().getDepartment());
     }
 
     private void login(String email, String password) throws Exception {

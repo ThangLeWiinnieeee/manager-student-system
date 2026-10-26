@@ -55,7 +55,12 @@ public class StudentMyGroupController {
 
     @GetMapping
     public String index(Model model) {
-        model.addAttribute("joinedCourses", periods.findJoinedCourses());
+        var joinedCourses = periods.findJoinedCourses();
+        model.addAttribute("joinedCourses", joinedCourses);
+        var now = java.time.LocalDateTime.now();
+        model.addAttribute("openCourseIds", joinedCourses.stream()
+                .filter(course -> course.isSvWindowOpen(now))
+                .map(course -> course.getId()).collect(java.util.stream.Collectors.toSet()));
         model.addAttribute("invitations", groups.findMyInvitations());
 
         model.addAttribute(
@@ -69,13 +74,14 @@ public class StudentMyGroupController {
 
     // GET: Hien thi form tao nhom
     @GetMapping("/new")
-    public String createForm(Model model) {
-
-        model.addAttribute(
-                "groupForm", new StudentGroupForm());
-
-        model.addAttribute(
-                "openPeriods", groups.findOpenStudentPeriods());
+    public String createForm(@RequestParam(required = false) Long roundId, Model model) {
+        var openPeriods = groups.findOpenStudentPeriods();
+        var form = new StudentGroupForm();
+        if (roundId != null && openPeriods.stream().anyMatch(course -> course.getId().equals(roundId))) {
+            form.setRoundId(roundId);
+        }
+        model.addAttribute("groupForm", form);
+        model.addAttribute("openPeriods", openPeriods);
 
         return "student-group/student-create";
     }

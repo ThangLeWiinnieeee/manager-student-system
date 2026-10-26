@@ -17,7 +17,7 @@ import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 
 @Controller
 @RequestMapping("/dean/group-topic-registrations")
-@PreAuthorize("hasAnyRole('DEAN','ADMIN')")
+@PreAuthorize("hasAnyRole('DEAN','ADMIN','LECTURER')")
 public class DeanGroupTopicRegistrationController {
 
     private final GroupTopicRegistrationService registrations;
@@ -38,7 +38,7 @@ public class DeanGroupTopicRegistrationController {
 
         model.addAttribute(
                 "registrations",
-                registrations.findAllForDean());
+                registrations.findReviewable());
 
         return "student-group/dean-topic-registrations";
     }
