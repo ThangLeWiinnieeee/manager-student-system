@@ -28,7 +28,7 @@ class RecoveryMailSenderTest {
         server.start();
         try {
             var smtp = mock(JavaMailSender.class);
-            var sender = new RecoveryMailSender(smtp, "test-key", "http://127.0.0.1:" + server.getAddress().getPort() + "/email");
+            var sender = new RecoveryMailSender(smtp, "test-key", "http://127.0.0.1:" + server.getAddress().getPort() + "/email", new GmailApiMailSender("", "", ""));
             var message = new SimpleMailMessage();
             message.setFrom("sender@example.test");
             message.setTo("student@example.test");

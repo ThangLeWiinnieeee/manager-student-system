@@ -8,8 +8,11 @@ proxy headers, hides error details and limits the database pool to five connecti
 The initial JVM memory limits must still be checked under actual Render load.
 
 Deployment is not yet complete: cloud credentials and live verification are pending.
-With `BREVO_API_KEY` set, password recovery sends through the Brevo HTTPS API;
-without it, local SMTP remains available. With `SUPABASE_URL` and
+With `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET` and `GMAIL_REFRESH_TOKEN` set,
+password recovery uses Gmail over HTTPS. All three must be provided together.
+Without Gmail credentials, `BREVO_API_KEY` selects Brevo HTTPS; otherwise local
+SMTP is used. Provider failures do not fall back to another provider.
+See [Gmail API setup](GMAIL_API.md). With `SUPABASE_URL` and
 `SUPABASE_SERVICE_ROLE_KEY` set, reports use private Supabase Storage; without
 them, local disk remains available only outside the `render` profile. The `render` profile refuses to start without both settings, preventing accidental temporary storage. Render Free
 blocks SMTP ports 25/465/587 and does not persist local uploads across restarts.
@@ -36,10 +39,10 @@ blocks SMTP ports 25/465/587 and does not persist local uploads across restarts.
    anon/publishable key. Set `SUPABASE_STORAGE_BUCKET=reports`. Allow ZIP uploads (`application/zip`) and legacy PDFs (`application/pdf`)
    up to 10 MB. Existing local reports must be copied into this bucket with their
    stored UUID filenames before switching storage; this is not automatic.
-6. Create a Brevo account, activate transactional email and verify a sender
-   (authenticate its domain if requested by Brevo). Set `BREVO_API_KEY` and
-   `MAIL_FROM` in Render. The sender must be approved by Brevo; account approval
-   and recipient delivery are not guaranteed until tested. Do not send keys in chat.
+6. Enable Gmail API in Google Cloud and authorize the sending Gmail account
+   with the `gmail.send` scope. Set `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`,
+   `GMAIL_REFRESH_TOKEN` and `MAIL_FROM` in Render. Use that Gmail address as
+   `MAIL_FROM`. Follow [Gmail API setup](GMAIL_API.md); do not send keys in chat.
 
 ## Create the web service after integrations are ready
 

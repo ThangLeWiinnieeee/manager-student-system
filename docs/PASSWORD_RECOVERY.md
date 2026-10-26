@@ -2,6 +2,11 @@
 
 ## Sử dụng
 
+Trên Render Free, cấu hình [Gmail API qua HTTPS](GMAIL_API.md) bằng
+`GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN` và `MAIL_FROM`.
+Khi đủ ba biến OAuth, Gmail API được ưu tiên; nếu không có thì dùng Brevo khi có
+`BREVO_API_KEY`, cuối cùng mới dùng SMTP theo hướng dẫn dưới đây.
+
 Tại `/login`, chọn **Quên mật khẩu?**: nhập email → nhập OTP → nhập và xác nhận mật khẩu mới → đăng nhập lại.
 
 Điền các biến `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM` theo nhà cung cấp SMTP trong môi trường chạy (tham khảo `.env.example`). Khởi động lại ứng dụng. Không commit `.env`, không dùng mật khẩu email cá nhân nếu nhà cung cấp yêu cầu app password. Cấu hình mặc định dùng STARTTLS cổng 587; triển khai qua HTTPS.

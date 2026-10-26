@@ -18,14 +18,16 @@ import org.springframework.web.client.RestClientException;
 public class RecoveryMailSender {
     private final JavaMailSender smtp;
     private final RestClient api;
+    private final GmailApiMailSender gmail;
 
     @Autowired
-    public RecoveryMailSender(JavaMailSender smtp, @Value("${BREVO_API_KEY:}") String key) {
-        this(smtp, key, "https://api.brevo.com/v3/smtp/email");
+    public RecoveryMailSender(JavaMailSender smtp, @Value("${BREVO_API_KEY:}") String key, GmailApiMailSender gmail) {
+        this(smtp, key, "https://api.brevo.com/v3/smtp/email", gmail);
     }
 
-    RecoveryMailSender(JavaMailSender smtp, String key, String endpoint) {
+    RecoveryMailSender(JavaMailSender smtp, String key, String endpoint, GmailApiMailSender gmail) {
         this.smtp = smtp;
+        this.gmail = gmail;
         var factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
         factory.setReadTimeout(Duration.ofSeconds(5));
@@ -34,6 +36,10 @@ public class RecoveryMailSender {
     }
 
     public void send(SimpleMailMessage message) {
+        if (gmail.isConfigured()) {
+            gmail.send(message);
+            return;
+        }
         if (api == null) {
             smtp.send(message);
             return;
