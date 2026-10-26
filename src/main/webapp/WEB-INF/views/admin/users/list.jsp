@@ -8,14 +8,14 @@
 </div>
 <div class="table-wrap" role="region" aria-label="Danh sách tài khoản" tabindex="0">
 <table aria-label="Danh sách tài khoản">
-    <thead><tr><th>Họ tên</th><th>Email đăng nhập</th><th>Vai trò</th><th>Chuyên ngành</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+    <thead><tr><th>Họ tên</th><th>Email đăng nhập</th><th>Vai trò</th><th>Bộ môn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
     <tbody>
     <c:forEach items="${users}" var="user">
         <tr>
             <td><c:out value="${user.fullName}"/></td>
             <td><c:out value="${user.email}"/></td>
             <td><c:out value="${user.role.displayName}"/></td>
-            <td><c:out value="${empty user.major ? '-' : user.major.name}"/></td>
+            <td><c:out value="${empty user.department ? '-' : user.department.name}"/></td>
             <td><span class="badge ${user.enabled ? 'active' : 'inactive'}">${user.enabled ? 'Hoạt động' : 'Đã khóa'}</span></td>
             <td class="actions">
                 <a class="button" href="<c:url value='/admin/users/${user.id}/edit'/>">Sửa</a>

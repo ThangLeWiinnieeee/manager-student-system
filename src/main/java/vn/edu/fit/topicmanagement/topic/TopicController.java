@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
-import vn.edu.fit.topicmanagement.major.MajorService;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
+import vn.edu.fit.topicmanagement.department.DepartmentService;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService;
 import vn.edu.fit.topicmanagement.user.Role;
 import vn.edu.fit.topicmanagement.user.UserAccountService;
 
@@ -30,18 +30,18 @@ import vn.edu.fit.topicmanagement.user.UserAccountService;
 @RequestMapping("/topics")
 public class TopicController {
     private final TopicService topics;
-    private final RegistrationPeriodService periods;
-    private final MajorService majors;
+    private final CourseRegistrationService periods;
+    private final DepartmentService departments;
     private final UserAccountService accounts;
 
     public TopicController(
             TopicService topics,
-            RegistrationPeriodService periods,
-            MajorService majors,
+            CourseRegistrationService periods,
+            DepartmentService departments,
             UserAccountService accounts) {
         this.topics = topics;
         this.periods = periods;
-        this.majors = majors;
+        this.departments = departments;
         this.accounts = accounts;
     }
 
@@ -49,7 +49,7 @@ public class TopicController {
     @ModelAttribute
     void referenceData(Model model) {
         model.addAttribute("periods", periods.findAll());
-        model.addAttribute("majors", majors.findEnabled());
+        model.addAttribute("departments", departments.findEnabled());
         model.addAttribute("lecturers", accounts.findAll().stream()
                 .filter(u -> u.getRole() == Role.LECTURER && u.isEnabled())
                 .toList());
@@ -59,27 +59,27 @@ public class TopicController {
     @GetMapping
     String list(
             @RequestParam(required = false) Long roundId,
-            @RequestParam(required = false) Long majorId,
+            @RequestParam(required = false) Long departmentId,
             @RequestParam(required = false) TopicStatus status,
             @RequestParam(defaultValue = "0") int page,
             Authentication authentication,
             Model model) {
         String viewerEmail = isManager(authentication) ? null : authentication.getName();
-        Page<Topic> topicPage = topics.search(roundId, majorId, status, viewerEmail, page);
+        Page<Topic> topicPage = topics.search(roundId, departmentId, status, viewerEmail, page);
         model.addAttribute("topicPage", topicPage);
         model.addAttribute("filterRoundId", roundId);
-        model.addAttribute("filterMajorId", majorId);
+        model.addAttribute("filterDepartmentId", departmentId);
         model.addAttribute("filterStatus", status);
         return "topic/list";
     }
 
     @GetMapping("/{id}")
     String detail(@PathVariable Long id, Authentication authentication, Model model) {
-        Topic topic = topics.get(id);
+        Topic topic = topics.getVisible(id, authentication.getName());
         model.addAttribute("topic", topic);
         model.addAttribute("rejectForm", new RejectForm());
         model.addAttribute("owner",
-                topic.getCreatedBy().getEmail().equalsIgnoreCase(authentication.getName()));
+                topic.isManagedBy(authentication.getName()));
         return "topic/detail";
     }
 
@@ -117,8 +117,8 @@ public class TopicController {
 
     @GetMapping("/{id}/edit")
     @PreAuthorize("hasRole('LECTURER')")
-    String editForm(@PathVariable Long id, Model model) {
-        Topic topic = topics.get(id);
+    String editForm(@PathVariable Long id, Authentication authentication, Model model) {
+        Topic topic = topics.getEditable(id, authentication.getName());
         model.addAttribute("topicForm", topics.toForm(topic));
         model.addAttribute("rejectionReason", topic.getRejectionReason());
         model.addAttribute("editing", true);
@@ -137,6 +137,7 @@ public class TopicController {
             Model model,
             RedirectAttributes redirectAttributes) {
         boolean submitNow = "submit".equals(action);
+        topics.getEditable(id, authentication.getName());
         if (!bindingResult.hasErrors()) {
             try {
                 topics.update(id, authentication.getName(), topicForm, submitNow);
@@ -198,7 +199,7 @@ public class TopicController {
         Topic topic = topics.get(id);
         model.addAttribute("topic", topic);
         model.addAttribute("owner",
-                topic.getCreatedBy().getEmail().equalsIgnoreCase(authentication.getName()));
+                topic.isManagedBy(authentication.getName()));
         return "topic/detail";
     }
 
@@ -230,5 +231,15 @@ public class TopicController {
     private static boolean isManager(Authentication authentication) {
         return authentication.getAuthorities().stream().anyMatch(authority ->
                 "ROLE_ADMIN".equals(authority.getAuthority()) || "ROLE_DEAN".equals(authority.getAuthority()));
+    }
+
+    @PostMapping("/{id}/advisors")
+    @PreAuthorize("hasAnyRole('ADMIN','DEAN')")
+    String assignAdvisors(@PathVariable Long id, @RequestParam(required = false) java.util.List<Long> advisorIds, RedirectAttributes redirect) {
+        try {
+            topics.assignAdvisors(id, advisorIds);
+            redirect.addFlashAttribute("success", "Đã phân công giảng viên hướng dẫn");
+        } catch (BusinessRuleException ex) { redirect.addFlashAttribute("error", ex.getMessage()); }
+        return "redirect:/topics/" + id;
     }
 }

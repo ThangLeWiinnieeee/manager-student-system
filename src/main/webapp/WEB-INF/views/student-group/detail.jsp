@@ -13,7 +13,7 @@
         <p>
             Nhóm:
             <c:out value="${group.name}"/>
-            | Đợt đăng ký:
+            | Môn/lớp đăng ký:
             <c:out value="${group.roundId}"/>
         </p>
     </div>
@@ -69,10 +69,11 @@
 </div>
 
 <!-- THEM THANH VIEN -->
+<c:if test="${membershipOpen}">
 <section class="panel">
 
     <div class="panel-heading">
-        <h2>Thêm thành viên</h2>
+        <h2>Mời thành viên</h2>
     </div>
 
     <p>
@@ -101,7 +102,7 @@
 
         <div class="form-actions">
             <button type="submit" class="primary">
-                + Thêm thành viên
+                + Mời thành viên
             </button>
         </div>
 
@@ -109,6 +110,8 @@
 
 </section>
 
+</c:if>
+<p>GV phụ trách có thể chuyển nhóm trưởng cho thành viên hiện hữu sau khi nhận đề tài, trước khi chốt kết quả. Danh sách thành viên và báo cáo cũ được giữ nguyên.</p>
 <!-- DANH SACH THANH VIEN -->
 <section class="panel">
 
@@ -190,6 +193,7 @@
                                         </button>
                                     </form>
 
+                                    <c:if test="${membershipOpen}">
                                     <!-- XOA THANH VIEN -->
                                     <form method="post"
                                           class="inline-form"
@@ -205,6 +209,7 @@
                                             Xóa
                                         </button>
                                     </form>
+                                    </c:if>
 
                                 </c:otherwise>
 
@@ -230,4 +235,6 @@
 
 </section>
 
+<c:set var="invitationBase" value="/admin/student-groups"/>
+<%@ include file="invitations.jsp" %>
 <%@ include file="../common/footer.jsp" %>

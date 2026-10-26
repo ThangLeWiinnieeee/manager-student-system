@@ -9,7 +9,7 @@ import vn.edu.fit.topicmanagement.council.Council;
 import vn.edu.fit.topicmanagement.topic.Topic;
 
 @Entity
-@Table(name = "topic_final_results")
+@Table(name = "group_results")
 public class TopicFinalResult {
 
     private static final DateTimeFormatter DISPLAY_FORMAT =
@@ -20,13 +20,33 @@ public class TopicFinalResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.EAGER, optional = false)
-    @JoinColumn(name = "topic_id", unique = true)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "topic_id")
     private Topic topic;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "registration_id", nullable = false)
+    private vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration registration;
+
+    public vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration getRegistration() { return registration; }
+    public void setRegistration(vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration value) {
+        registration = value;
+        topic = value.getTopic();
+    }
+
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "council_id")
     private Council council;
+
+    @Column(name = "supporter_score", precision = 4, scale = 2)
+    private BigDecimal supporterScore;
+    @Column(name = "defense_allowed")
+    private Boolean defenseAllowed;
+    public BigDecimal getSupporterScore() { return supporterScore; }
+    public void setSupporterScore(BigDecimal value) { supporterScore = value; }
+    public Boolean getDefenseAllowed() { return defenseAllowed; }
+    public void setDefenseAllowed(Boolean value) { defenseAllowed = value; }
 
     @Column(name = "reviewer_score", precision = 4, scale = 2)
     private BigDecimal reviewerScore;

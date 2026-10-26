@@ -12,13 +12,13 @@
     <select name="roundId" aria-label="Lọc theo đợt">
         <option value="">-- Tất cả đợt --</option>
         <c:forEach items="${periods}" var="period">
-            <option value="${period.id}" ${filterRoundId == period.id ? 'selected' : ''}><c:out value="${period.name}"/></option>
+            <option value="${period.id}" ${filterRoundId == period.id ? 'selected' : ''}><c:out value="${period.selectionLabel}"/></option>
         </c:forEach>
     </select>
-    <select name="majorId" aria-label="Lọc theo chuyên ngành">
-        <option value="">-- Tất cả chuyên ngành --</option>
-        <c:forEach items="${majors}" var="major">
-            <option value="${major.id}" ${filterMajorId == major.id ? 'selected' : ''}><c:out value="${major.name}"/></option>
+    <select name="departmentId" aria-label="Lọc theo bộ môn">
+        <option value="">-- Tất cả bộ môn --</option>
+        <c:forEach items="${departments}" var="department">
+            <option value="${department.id}" ${filterDepartmentId == department.id ? 'selected' : ''}><c:out value="${department.name}"/></option>
         </c:forEach>
     </select>
     <select name="status" aria-label="Lọc theo trạng thái">
@@ -32,13 +32,13 @@
 </form>
 <div class="table-wrap" role="region" aria-label="Danh sách đề tài" tabindex="0">
 <table aria-label="Danh sách đề tài">
-    <thead><tr><th>Tên đề tài</th><th>Đợt đăng ký</th><th>Chuyên ngành</th><th>GVHD</th><th>Người tạo</th><th>Trạng thái</th><th>Cập nhật</th><th>Thao tác</th></tr></thead>
+    <thead><tr><th>Tên đề tài</th><th>Môn/lớp đăng ký</th><th>Bộ môn</th><th>GVHD</th><th>Người tạo</th><th>Trạng thái</th><th>Cập nhật</th><th>Thao tác</th></tr></thead>
     <tbody>
     <c:forEach items="${topicPage.content}" var="t">
         <tr>
             <td><a href="<c:url value='/topics/${t.id}'/>"><c:out value="${t.title}"/></a></td>
             <td><c:out value="${t.round.name}"/></td>
-            <td><c:out value="${t.major.name}" default="Không giới hạn"/></td>
+            <td><c:out value="${t.department.name}" default="Không giới hạn"/></td>
             <td><c:forEach items="${t.advisors}" var="advisor" varStatus="loop"><c:out value="${advisor.fullName}"/><c:if test="${not loop.last}">, </c:if></c:forEach></td>
             <td><c:out value="${t.createdBy.fullName}"/></td>
             <td>
@@ -52,7 +52,7 @@
             </td>
             <td><c:out value="${t.updatedAtText}"/></td>
             <td class="actions">
-                <c:if test="${pageContext.request.isUserInRole('LECTURER') and t.createdBy.email == pageContext.request.userPrincipal.name and (t.status == 'DRAFT' or t.status == 'REJECTED')}">
+                <c:if test="${pageContext.request.isUserInRole('LECTURER') and t.isManagedBy(pageContext.request.userPrincipal.name) and (t.status == 'DRAFT' or t.status == 'REJECTED')}">
                     <a class="button" href="<c:url value='/topics/${t.id}/edit'/>">Sửa</a>
                     <form action="<c:url value='/topics/${t.id}/submit'/>" method="post" class="inline-form">
                         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
@@ -84,7 +84,7 @@
     <c:if test="${topicPage.hasPrevious()}">
         <c:url var="prevUrl" value="/topics">
             <c:if test="${not empty filterRoundId}"><c:param name="roundId" value="${filterRoundId}"/></c:if>
-            <c:if test="${not empty filterMajorId}"><c:param name="majorId" value="${filterMajorId}"/></c:if>
+            <c:if test="${not empty filterDepartmentId}"><c:param name="departmentId" value="${filterDepartmentId}"/></c:if>
             <c:if test="${not empty filterStatus}"><c:param name="status" value="${filterStatus}"/></c:if>
             <c:param name="page" value="${topicPage.number - 1}"/>
         </c:url>
@@ -94,7 +94,7 @@
     <c:if test="${topicPage.hasNext()}">
         <c:url var="nextUrl" value="/topics">
             <c:if test="${not empty filterRoundId}"><c:param name="roundId" value="${filterRoundId}"/></c:if>
-            <c:if test="${not empty filterMajorId}"><c:param name="majorId" value="${filterMajorId}"/></c:if>
+            <c:if test="${not empty filterDepartmentId}"><c:param name="departmentId" value="${filterDepartmentId}"/></c:if>
             <c:if test="${not empty filterStatus}"><c:param name="status" value="${filterStatus}"/></c:if>
             <c:param name="page" value="${topicPage.number + 1}"/>
         </c:url>

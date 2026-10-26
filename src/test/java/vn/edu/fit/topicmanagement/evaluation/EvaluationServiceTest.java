@@ -29,7 +29,7 @@ import vn.edu.fit.topicmanagement.user.UserAccountService;
 class EvaluationServiceTest {
 
     @Mock EvaluationRepository evaluations;
-    @Mock TopicService topics;
+    @Mock vn.edu.fit.topicmanagement.submission.ReportSubmissionRepository reports;
     @Mock CouncilService councils;
     @Mock UserAccountService users;
 
@@ -42,7 +42,7 @@ class EvaluationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new EvaluationService(evaluations, topics, councils, users);
+        service = new EvaluationService(evaluations, reports, councils, users);
 
         advisorLec = new UserAccount();
         advisorLec.setId(10L);
@@ -57,7 +57,10 @@ class EvaluationServiceTest {
         topic = new Topic();
         topic.setId(1L);
         topic.setTitle("Đề tài KLTN");
+        topic.setRound(new vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration());
+        topic.getRound().setPeriod(new vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod());
         topic.setAdvisors(Set.of(advisorLec));
+        topic.getRound().getPeriod().setType(vn.edu.fit.topicmanagement.registrationperiod.RoundType.KLTN);
 
         council = new Council();
         council.setId(100L);
@@ -73,7 +76,11 @@ class EvaluationServiceTest {
     @Test
     void evaluate_advisorCannotEvaluate_throwsException() {
         when(users.getByEmail("advisor@fit.edu.vn")).thenReturn(advisorLec);
-        when(topics.get(1L)).thenReturn(topic);
+        var reg = new vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration();
+        reg.setTopic(topic); reg.setGroup(new vn.edu.fit.topicmanagement.studentgroup.StudentGroup());
+        reg.setStatus(vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus.APPROVED);
+        when(councils.lockAssessment(1L)).thenReturn(reg);
+        when(reports.countByGroup_Id(null)).thenReturn(1L);
 
         EvaluationForm form = new EvaluationForm();
         assertThrows(BusinessRuleException.class, () -> service.evaluate(1L, form, "advisor@fit.edu.vn"));
@@ -82,9 +89,13 @@ class EvaluationServiceTest {
     @Test
     void evaluate_saveDraft_success() {
         when(users.getByEmail("reviewer@fit.edu.vn")).thenReturn(reviewerLec);
-        when(topics.get(1L)).thenReturn(topic);
+        var reg = new vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration();
+        reg.setTopic(topic); reg.setGroup(new vn.edu.fit.topicmanagement.studentgroup.StudentGroup());
+        reg.setStatus(vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus.APPROVED);
+        when(councils.lockAssessment(1L)).thenReturn(reg);
+        when(reports.countByGroup_Id(null)).thenReturn(1L);
         when(councils.getAssignment(1L)).thenReturn(assignment);
-        when(evaluations.findByTopic_IdAndEvaluator_Id(1L, reviewerLec.getId())).thenReturn(Optional.empty());
+        when(evaluations.findByRegistration_IdAndEvaluator_Id(1L, reviewerLec.getId())).thenReturn(Optional.empty());
         when(evaluations.save(any(Evaluation.class))).thenAnswer(i -> i.getArgument(0));
 
         EvaluationForm form = new EvaluationForm();
@@ -103,12 +114,16 @@ class EvaluationServiceTest {
     @Test
     void evaluate_alreadySubmitted_lockedFromEditing() {
         when(users.getByEmail("reviewer@fit.edu.vn")).thenReturn(reviewerLec);
-        when(topics.get(1L)).thenReturn(topic);
+        var reg = new vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration();
+        reg.setTopic(topic); reg.setGroup(new vn.edu.fit.topicmanagement.studentgroup.StudentGroup());
+        reg.setStatus(vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus.APPROVED);
+        when(councils.lockAssessment(1L)).thenReturn(reg);
+        when(reports.countByGroup_Id(null)).thenReturn(1L);
         when(councils.getAssignment(1L)).thenReturn(assignment);
 
         Evaluation existing = new Evaluation();
         existing.setStatus(EvaluationStatus.SUBMITTED);
-        when(evaluations.findByTopic_IdAndEvaluator_Id(1L, reviewerLec.getId())).thenReturn(Optional.of(existing));
+        when(evaluations.findByRegistration_IdAndEvaluator_Id(1L, reviewerLec.getId())).thenReturn(Optional.of(existing));
 
         EvaluationForm form = new EvaluationForm();
         BusinessRuleException ex = assertThrows(BusinessRuleException.class,

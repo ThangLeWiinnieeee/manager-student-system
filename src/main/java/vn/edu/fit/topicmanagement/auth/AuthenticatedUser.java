@@ -11,6 +11,10 @@ public final class AuthenticatedUser extends User {
     private static final long serialVersionUID = 1L;
 
     private final String fullName;
+    private final Long accountId;
+    private final long authVersion;
+    public Long getAccountId() { return accountId; }
+    public long getAuthVersion() { return authVersion; }
 
     public AuthenticatedUser(UserAccount account) {
         super(
@@ -22,6 +26,8 @@ public final class AuthenticatedUser extends User {
                 true,
                 List.of(new SimpleGrantedAuthority("ROLE_" + account.getRole().name())));
         this.fullName = account.getFullName();
+        this.accountId = account.getId();
+        this.authVersion = account.getAuthVersion();
     }
 
     public String getFullName() {

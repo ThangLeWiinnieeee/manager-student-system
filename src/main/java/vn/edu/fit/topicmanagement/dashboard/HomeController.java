@@ -19,7 +19,7 @@ public class HomeController {
         model.addAttribute("fullName", ((AuthenticatedUser) authentication.getPrincipal()).getFullName());
         DashboardService.Summary summary = dashboard.getSummary();
         model.addAttribute("userCount", summary.userCount());
-        model.addAttribute("majorCount", summary.majorCount());
+        model.addAttribute("departmentCount", summary.departmentCount());
         return "home";
     }
 }

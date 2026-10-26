@@ -3,6 +3,8 @@
 > Người bàn giao: **Thanh Lâm (TV2)** · Ngày: 12/10/2026
 > Người nhận: **Văn Minh (TV3)** — Module đăng ký đề tài của nhóm sinh viên
 
+> Tài liệu bàn giao lịch sử tại V5. Quy tắc hiện tại và migration V13–V16 xem [README](../README.md) và [CONTEXT](../CONTEXT.md); không dùng số phiên bản tiếp theo hoặc giới hạn nhóm bên dưới cho code mới.
+
 ---
 
 ## 1. TV2 đã làm gì
@@ -29,7 +31,7 @@ registration_periods(id, name, round_type CHECK(MON_HOC|NCKH|TLCN|KLTN),
 topics(id, title vc200, description vc2000,
     status CHECK(DRAFT|PENDING|APPROVED|REJECTED|PUBLISHED),
     rejection_reason vc500, round_id → registration_periods,
-    major_id → majors, created_by_id → users,
+    department_id → departments, created_by_id → users,
     created_at/updated_at timestamptz)
 
 topic_advisors(topic_id, advisor_id, PK(topic_id, advisor_id))  -- 1–2 GVHD
@@ -75,7 +77,7 @@ topic_advisors(topic_id, advisor_id, PK(topic_id, advisor_id))  -- 1–2 GVHD
 - Đợt KLTN "Đợt đăng ký KLTN HK1 2026-2027" (cửa GV mở tới 31/10/2026) + vài đợt test.
 - Đề tài mẫu đã PUBLISHED. Tài khoản test: GV `lecturer1@fit.edu.vn`,
   SV `maitt@fit.edu.vn` (mật khẩu `Password123!`), admin thường trực.
-- TV3 được xóa/sửa dữ liệu test của TV2, nhưng KHÔNG đụng majors/users gốc của TV1.
+- TV3 được xóa/sửa dữ liệu test của TV2, nhưng KHÔNG đụng departments/users gốc của TV1.
 
 ---
 

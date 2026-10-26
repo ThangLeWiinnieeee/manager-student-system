@@ -36,5 +36,13 @@ if ($env:DB_PASSWORD -eq "YOUR_DATABASE_PASSWORD" -or [string]::IsNullOrWhiteSpa
 }
 
 # 4. Khoi chay ung dung
-Write-Host "[INFO] Dang khoi chay ung dung Spring Boot..." -ForegroundColor Cyan
-mvn clean spring-boot:run "-Dmaven.test.skip=true"
+Write-Host "[INFO] Che do dev: luu Java trong VS Code de tu build va restart; JSP/CSS chi can F5." -ForegroundColor Cyan
+Write-Host "[INFO] Nhan Ctrl+C de dung ung dung." -ForegroundColor Cyan
+Push-Location $scriptDir
+try {
+    mvn spring-boot:run "-Dmaven.test.skip=true" "-Dspring-boot.run.addResources=true"
+    $runExitCode = $LASTEXITCODE
+} finally {
+    Pop-Location
+}
+exit $runExitCode

@@ -1,4 +1,4 @@
-package vn.edu.fit.topicmanagement.major;
+package vn.edu.fit.topicmanagement.department;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,37 +14,37 @@ import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 import vn.edu.fit.topicmanagement.user.UserAccountRepository;
 
 @ExtendWith(MockitoExtension.class)
-class MajorServiceTest {
-    @Mock MajorRepository majors;
+class DepartmentServiceTest {
+    @Mock DepartmentRepository departments;
     @Mock UserAccountRepository users;
 
     @Test
-    void cannotDisableOccupiedMajorThroughEitherEndpoint() {
-        Major major = new Major();
-        when(majors.findById(1L)).thenReturn(Optional.of(major));
-        when(users.existsByMajorId(1L)).thenReturn(true);
-        MajorService service = new MajorService(majors, users);
-        MajorForm form = form(false);
+    void cannotDisableOccupiedDepartmentThroughEitherEndpoint() {
+        Department department = new Department();
+        when(departments.findById(1L)).thenReturn(Optional.of(department));
+        when(users.existsByDepartmentId(1L)).thenReturn(true);
+        DepartmentService service = new DepartmentService(departments, users);
+        DepartmentForm form = form(false);
 
         assertThrows(BusinessRuleException.class, () -> service.toggle(1L));
         assertThrows(BusinessRuleException.class, () -> service.update(1L, form));
-        assertTrue(major.isEnabled());
+        assertTrue(department.isEnabled());
     }
 
     @Test
-    void canDisableEmptyMajorAndEnableItAgain() {
-        Major major = new Major();
-        when(majors.findById(1L)).thenReturn(Optional.of(major));
-        MajorService service = new MajorService(majors, users);
+    void canDisableEmptyDepartmentAndEnableItAgain() {
+        Department department = new Department();
+        when(departments.findById(1L)).thenReturn(Optional.of(department));
+        DepartmentService service = new DepartmentService(departments, users);
 
         service.update(1L, form(false));
-        assertFalse(major.isEnabled());
+        assertFalse(department.isEnabled());
         service.toggle(1L);
-        assertTrue(major.isEnabled());
+        assertTrue(department.isEnabled());
     }
 
-    private static MajorForm form(boolean enabled) {
-        MajorForm form = new MajorForm();
+    private static DepartmentForm form(boolean enabled) {
+        DepartmentForm form = new DepartmentForm();
         form.setCode("CNPM");
         form.setName("Công nghệ phần mềm");
         form.setEnabled(enabled);

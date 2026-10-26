@@ -9,7 +9,7 @@
     <h1 style="margin-top: 8px;">Phiếu đánh giá & Chấm điểm đề tài</h1>
     <p>
       Đề tài: <strong><c:out value="${topic.title}" /></strong>
-      · Đợt: <strong><c:out value="${topic.round.name}" /></strong>
+      · Môn/lớp: <strong><c:out value="${topic.round.name}" /></strong>
       · Trạng thái phiếu:
       <c:choose>
         <c:when test="${currentEval != null && currentEval.status == 'SUBMITTED'}">
@@ -29,7 +29,8 @@
 <c:set var="isLocked" value="${currentEval != null && currentEval.status == 'SUBMITTED'}" />
 
 <div class="card" style="background: #fff; padding: 24px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); max-width: 750px; margin-bottom: 24px;">
-  <form action="<c:url value='/lecturer/evaluations/topic/${topic.id}'/>" method="post" id="evalForm">
+  <p>Nhóm: <strong><c:out value="${registration.group.name}"/></strong> · <a href="<c:url value='/review/submissions/groups/${registration.group.id}'/>">Xem báo cáo để chấm</a></p>
+<form action="<c:url value='/lecturer/evaluations/registration/${registration.id}'/>" method="post" id="evalForm">
     <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
     <input type="hidden" name="action" id="formAction" value="draft" />
 
@@ -65,6 +66,19 @@
       </span>
     </div>
 
+    <c:if test="${!assignment.legacyAssessment && topic.round.type == 'TLCN'}"><p>GV hỗ trợ nộp điểm trước; GVPB chỉ chấm sau khi GV hỗ trợ đã nộp chính thức.</p></c:if>
+    <c:if test="${!assignment.legacyAssessment && topic.round.type == 'KLTN' && assignment.reviewer.email == pageContext.request.userPrincipal.name}">
+    <div class="form-group">
+      <label for="defenseAllowed">Quyết định cho phép bảo vệ (bắt buộc khi nộp điểm)</label>
+      <select id="defenseAllowed" name="defenseAllowed" ${isLocked ? 'disabled' : ''}>
+        <option value="" ${evaluationForm.defenseAllowed == null ? 'selected' : ''}>Chưa quyết định</option>
+        <option value="true" ${evaluationForm.defenseAllowed != null && evaluationForm.defenseAllowed ? 'selected' : ''}>Được bảo vệ trước hội đồng</option>
+        <option value="false" ${evaluationForm.defenseAllowed != null && !evaluationForm.defenseAllowed ? 'selected' : ''}>Không được bảo vệ — điểm cuối cùng bằng 0</option>
+      </select>
+      <p>Nếu không cho phép bảo vệ, cần ghi rõ lý do trong nhận xét. Khoa xác nhận trước khi công bố.</p>
+    </div>
+    </c:if>
+    <c:if test="${topic.round.type == 'NCKH'}"><p>Nhận xét nghiệm thu cần nêu kết quả so với mục tiêu, phương pháp, tính mới và khả năng ứng dụng.</p></c:if>
     <div class="form-group" style="margin-bottom: 24px;">
       <label for="comments" style="display: block; font-weight: 600; margin-bottom: 6px;">Nhận xét & Đánh giá chi tiết</label>
       <textarea id="comments" name="comments" rows="6" maxlength="2000" ${isLocked ? 'readonly' : ''} placeholder="Nhập nhận xét về ưu điểm, khuyết điểm, tính thực tiễn..." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit;"><c:out value='${evaluationForm.comments}'/></textarea>

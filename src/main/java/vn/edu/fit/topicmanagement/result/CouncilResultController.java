@@ -28,12 +28,13 @@ public class CouncilResultController {
         this.users = users;
     }
 
-    @GetMapping("/topic/{topicId}")
-    public String topicSummary(@PathVariable Long topicId, Principal principal, Model model) {
-        ResultService.TopicSummaryView summary = results.getSummaryView(topicId);
+    @GetMapping("/registration/{registrationId}")
+    public String topicSummary(@PathVariable Long registrationId, Principal principal, Model model) {
+        results.assertCanView(registrationId, principal.getName());
+        ResultService.TopicSummaryView summary = results.getSummaryView(registrationId);
         UserAccount current = users.getByEmail(principal.getName());
 
-        boolean isPresident = summary.council().getMembers().stream()
+        boolean isPresident = summary.needsCouncil() && summary.council() != null && summary.council().getMembers().stream()
                 .anyMatch(m -> m.getRole() == CouncilRole.PRESIDENT && m.getLecturer().getId().equals(current.getId()));
 
         model.addAttribute("summary", summary);
@@ -41,18 +42,18 @@ public class CouncilResultController {
         return "result/topic-summary";
     }
 
-    @PostMapping("/topic/{topicId}/confirm")
+    @PostMapping("/registration/{registrationId}/confirm")
     public String confirm(
-            @PathVariable Long topicId,
+            @PathVariable Long registrationId,
             @RequestParam("conclusion") String conclusion,
             Principal principal,
             RedirectAttributes redirect) {
         try {
-            results.confirmByPresident(topicId, conclusion, principal.getName());
+            results.confirmByPresident(registrationId, conclusion, principal.getName());
             redirect.addFlashAttribute("success", "Chủ tịch hội đồng đã xác nhận kết quả bảo vệ thành công");
         } catch (BusinessRuleException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/council/results/topic/" + topicId;
+        return "redirect:/council/results/registration/" + registrationId;
     }
 }

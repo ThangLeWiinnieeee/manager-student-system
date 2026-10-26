@@ -10,7 +10,7 @@ import vn.edu.fit.topicmanagement.topic.Topic;
 import vn.edu.fit.topicmanagement.user.UserAccount;
 
 @Entity
-@Table(name = "evaluations")
+@Table(name = "group_evaluations")
 public class Evaluation {
 
     private static final DateTimeFormatter DISPLAY_FORMAT =
@@ -24,6 +24,17 @@ public class Evaluation {
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "topic_id")
     private Topic topic;
+
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "registration_id", nullable = false)
+    private vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration registration;
+
+    public vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration getRegistration() { return registration; }
+    public void setRegistration(vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration value) {
+        registration = value;
+        topic = value.getTopic();
+    }
+
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "evaluator_id")
@@ -44,6 +55,11 @@ public class Evaluation {
 
     @Column(name = "total_score", nullable = false, precision = 4, scale = 2)
     private BigDecimal totalScore = BigDecimal.ZERO;
+
+    @Column(name = "defense_allowed")
+    private Boolean defenseAllowed;
+    public Boolean getDefenseAllowed() { return defenseAllowed; }
+    public void setDefenseAllowed(Boolean value) { defenseAllowed = value; }
 
     @Column(length = 2000)
     private String comments;

@@ -572,6 +572,128 @@ select:focus {
 .profile dd {
   font-weight: 500;
 }
+.topic-back {
+  display: inline-block;
+  margin-bottom: 20px;
+}
+.topic-heading {
+  margin-bottom: 28px;
+}
+.topic-heading h1 {
+  margin-top: 14px;
+  max-width: 42ch;
+  overflow-wrap: anywhere;
+}
+.topic-heading p {
+  margin: 8px 0 0;
+  font-size: 13px;
+}
+.topic-labels,
+.topic-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.topic-labels {
+  font-size: 13px;
+}
+.topic-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.topic-main,
+.topic-sidebar {
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+.topic-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+  margin-top: 20px;
+}
+.topic-facts {
+  margin: 0;
+}
+.topic-facts dt {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.topic-facts dd {
+  margin: 6px 0 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.topic-advisors {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.7;
+}
+.topic-advisors li + li {
+  margin-top: 8px;
+}
+.topic-delete {
+  margin-left: auto;
+}
+.topic-danger {
+  color: #a13c3c;
+}
+.topic-disclosure {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding-top: 18px;
+}
+.topic-disclosure summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.topic-inline-editor {
+  margin-top: 18px;
+}
+.topic-inline-editor textarea {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font: inherit;
+  resize: vertical;
+}
+.topic-advisor-options {
+  border: 0;
+  padding: 0;
+  margin: 0 0 16px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.topic-advisor-options legend {
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.topic-advisor-options .checkbox {
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+.topic-advisor-options input {
+  flex-shrink: 0;
+}
+@media (max-width: 1100px) {
+  .topic-detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .topic-delete {
+    margin-left: 0;
+  }
+}
 .error-page {
   text-align: center;
   padding: 70px 20px;
@@ -972,3 +1094,16 @@ form select[multiple] {
 .forgot-password-link:hover { color: #39369d; text-decoration: underline; }
 .forgot-password-link:active { transform: translateY(1px); }
 .login-card .login-submit { margin-top: 0; }
+
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

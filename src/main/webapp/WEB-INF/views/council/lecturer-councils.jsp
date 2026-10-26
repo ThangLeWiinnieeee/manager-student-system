@@ -15,7 +15,7 @@
     <thead>
       <tr>
         <th>Tên hội đồng</th>
-        <th>Đợt đăng ký</th>
+        <th>Môn/lớp đăng ký</th>
         <th>Địa điểm</th>
         <th>Thời gian báo cáo</th>
         <th>Trạng thái</th>

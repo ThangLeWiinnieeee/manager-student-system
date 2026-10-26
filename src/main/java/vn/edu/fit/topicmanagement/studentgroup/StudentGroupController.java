@@ -17,7 +17,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/admin/student-groups")
-@PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
+@PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
 public class StudentGroupController {
 
     private final StudentGroupService groups;
@@ -149,6 +149,8 @@ public class StudentGroupController {
 
         model.addAttribute("group", group);
         model.addAttribute("members", memberList);
+        model.addAttribute("invitations", groups.findInvitations(id));
+        model.addAttribute("membershipOpen", groups.isMembershipOpen(id));
         model.addAttribute(
                 "memberCount", memberList.size());
         model.addAttribute(
@@ -183,7 +185,7 @@ public class StudentGroupController {
 
             redirectAttributes.addFlashAttribute(
                     "success",
-                    "Thêm thành viên thành công"
+                    "Đã gửi lời mời. Sinh viên cần xác nhận trước khi vào nhóm."
             );
 
         } catch (BusinessRuleException ex) {
@@ -197,6 +199,13 @@ public class StudentGroupController {
         return "redirect:/admin/student-groups/" + id;
     }
 
+
+    @PostMapping("/{id}/invitations/{studentId}/cancel")
+    public String cancelInvitation(@PathVariable Long id, @PathVariable Long studentId, RedirectAttributes redirect) {
+        groups.cancelInvitation(id, studentId);
+        redirect.addFlashAttribute("success", "Đã thu hồi lời mời");
+        return "redirect:/admin/student-groups/" + id;
+    }
 
     // TV3: Xóa thành viên khỏi nhóm
     @PostMapping("/{id}/members/{studentId}/remove")

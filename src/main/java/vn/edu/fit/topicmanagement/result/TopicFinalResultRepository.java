@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 public interface TopicFinalResultRepository extends JpaRepository<TopicFinalResult, Long> {
 
-    Optional<TopicFinalResult> findByTopic_Id(Long topicId);
+    Optional<TopicFinalResult> findByRegistration_Id(Long registrationId);
 
     List<TopicFinalResult> findByCouncil_Id(Long councilId);
 

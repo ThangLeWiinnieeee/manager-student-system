@@ -1,6 +1,7 @@
 package vn.edu.fit.topicmanagement.result;
 
 import java.math.BigDecimal;
+import vn.edu.fit.topicmanagement.registrationperiod.RoundType;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -19,7 +20,6 @@ import vn.edu.fit.topicmanagement.council.TopicAssignment;
 import vn.edu.fit.topicmanagement.evaluation.Evaluation;
 import vn.edu.fit.topicmanagement.evaluation.EvaluationService;
 import vn.edu.fit.topicmanagement.evaluation.EvaluationStatus;
-import vn.edu.fit.topicmanagement.evaluation.EvaluationType;
 import vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration;
 import vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationRepository;
 import vn.edu.fit.topicmanagement.studentgroup.StudentGroupMemberRepository;
@@ -57,82 +57,98 @@ public class ResultService {
         this.groupMembers = groupMembers;
     }
 
+    public void assertCanView(Long registrationId, String email) { councils.assertCanViewAssessment(registrationId, email); }
+
     @Transactional(readOnly = true)
-    public TopicSummaryView getSummaryView(Long topicId) {
-        Topic topic = topics.get(topicId);
-        TopicAssignment assignment = councils.getAssignment(topicId);
-        if (assignment == null || assignment.getCouncil() == null) {
-            throw new BusinessRuleException("Đề tài chưa được phân công hội đồng bảo vệ");
-        }
-
+    public TopicSummaryView getSummaryView(Long registrationId) {
+        var registration = councils.getRegistration(registrationId);
+        Topic topic = registration.getTopic();
+        TopicAssignment assignment = councils.getAssignment(registrationId);
+        if (assignment == null) throw new BusinessRuleException("Nhóm chưa được phân công chấm");
+        TopicFinalResult existing = results.findByRegistration_Id(registrationId).orElse(null);
+        boolean finalized = existing != null && (existing.isPresidentConfirmed() || existing.getPublishedAt() != null);
+        RoundType type = topic.getRound().getType();
+        boolean legacy = assignment.isLegacyAssessment();
         Council council = assignment.getCouncil();
-        List<Evaluation> allEvals = evaluations.findByTopic(topicId);
-
-        Evaluation reviewerEval = null;
-        if (assignment.getReviewer() != null) {
-            reviewerEval = allEvals.stream()
-                    .filter(e -> e.getEvaluationType() == EvaluationType.REVIEWER)
-                    .findFirst().orElse(null);
-        }
-
+        List<Evaluation> allEvals = evaluations.findByTopic(registrationId);
+        Evaluation reviewerEval = evaluationOf(allEvals, assignment.getReviewer());
+        Evaluation supporterEval = evaluationOf(allEvals, assignment.getSupporter());
+        BigDecimal reviewerScore = submittedScore(reviewerEval);
+        BigDecimal supporterScore = submittedScore(supporterEval);
+        Boolean defenseAllowed = reviewerScore != null && reviewerEval != null ? reviewerEval.getDefenseAllowed() : null;
+        boolean defenseRejected = type == RoundType.KLTN && Boolean.FALSE.equals(defenseAllowed);
+        boolean needsCouncil = legacy || type == RoundType.NCKH || (type == RoundType.KLTN && !defenseRejected);
         List<CouncilMemberScoreView> memberScores = new ArrayList<>();
-        BigDecimal sumCouncilScores = BigDecimal.ZERO;
-        int councilSubmittedCount = 0;
-
-        for (CouncilMember cm : council.getMembers()) {
-            Evaluation eval = allEvals.stream()
-                    .filter(e -> e.getEvaluationType() == EvaluationType.COUNCIL
-                            && e.getEvaluator().getId().equals(cm.getLecturer().getId()))
-                    .findFirst().orElse(null);
-
-            boolean isSub = eval != null && eval.getStatus() == EvaluationStatus.SUBMITTED;
-            if (isSub) {
-                sumCouncilScores = sumCouncilScores.add(eval.getTotalScore());
-                councilSubmittedCount++;
+        BigDecimal sum = BigDecimal.ZERO;
+        int count = 0;
+        if (needsCouncil && council != null) {
+            if (!finalized) councils.assertReady(council);
+            for (CouncilMember member : council.getMembers()) {
+                var evaluation = evaluationOf(allEvals, member.getLecturer());
+                memberScores.add(new CouncilMemberScoreView(member.getLecturer(), member.getRole(), evaluation));
+                var score = submittedScore(evaluation);
+                if (score != null) { sum = sum.add(score); count++; }
             }
-            memberScores.add(new CouncilMemberScoreView(cm.getLecturer(), cm.getRole(), eval));
         }
+        boolean councilComplete = council != null && count >= 3 && count == council.getMembers().size();
+        BigDecimal councilAverage = councilComplete
+                ? sum.divide(BigDecimal.valueOf(count), 8, RoundingMode.HALF_UP) : null;
+        boolean complete = switch (type) {
+            case MON_HOC -> reviewerScore != null;
+            case TLCN -> supporterScore != null && reviewerScore != null;
+            case KLTN -> reviewerScore != null && (defenseRejected || (Boolean.TRUE.equals(defenseAllowed) && councilComplete));
+            case NCKH -> councilComplete;
+        };
+        if (legacy) complete = councilComplete && (assignment.getReviewer() == null || reviewerScore != null);
+        BigDecimal finalScore = null;
+        if (complete) {
+            if (legacy) {
+                var ids = new java.util.HashSet<Long>();
+                council.getMembers().forEach(m -> ids.add(m.getLecturer().getId()));
+                if (assignment.getReviewer() != null) ids.add(assignment.getReviewer().getId());
+                finalScore = allEvals.stream().filter(e -> ids.contains(e.getEvaluator().getId())
+                                && e.getStatus() == EvaluationStatus.SUBMITTED)
+                        .map(Evaluation::getTotalScore).reduce(BigDecimal.ZERO, BigDecimal::add)
+                        .divide(BigDecimal.valueOf(ids.size()), 2, RoundingMode.HALF_UP);
+            } else finalScore = switch (type) {
+                case MON_HOC -> reviewerScore;
+                case TLCN -> supporterScore.add(reviewerScore).divide(BigDecimal.valueOf(2), 2, RoundingMode.HALF_UP);
+                case KLTN -> defenseRejected ? BigDecimal.ZERO
+                        : reviewerScore.add(councilAverage).divide(BigDecimal.valueOf(2), 2, RoundingMode.HALF_UP);
+                case NCKH -> councilAverage;
+            };
+            finalScore = finalScore.setScale(2, RoundingMode.HALF_UP);
+        }
+        // A finalized historical result keeps its recorded score and formula.
+        if (finalized) {
+            finalScore = existing.getFinalScore();
+        }
+        String grade = !legacy && type == RoundType.NCKH ? "CHƯA XẾP LOẠI" : determineGrade(finalScore);
+        if (finalized) grade = existing.getGrade();
+        return new TopicSummaryView(registration, topic, council, assignment.getReviewer(), reviewerEval,
+                memberScores, finalized || complete, councilAverage == null ? null : councilAverage.setScale(2, RoundingMode.HALF_UP),
+                reviewerScore, finalScore, grade, existing, assignment.getSupporter(), supporterEval,
+                supporterScore, defenseAllowed, needsCouncil, legacy);
+    }
 
-        boolean allCouncilSubmitted = councilSubmittedCount == council.getMembers().size() && !council.getMembers().isEmpty();
-        boolean reviewerSubmitted = assignment.getReviewer() == null
-                || (reviewerEval != null && reviewerEval.getStatus() == EvaluationStatus.SUBMITTED);
-        boolean isFullyEvaluated = allCouncilSubmitted && reviewerSubmitted;
+    private Evaluation evaluationOf(List<Evaluation> list, UserAccount lecturer) {
+        return lecturer == null ? null : list.stream().filter(e -> e.getEvaluator().getId().equals(lecturer.getId()))
+                .findFirst().orElse(null);
+    }
 
-        BigDecimal councilAvg = councilSubmittedCount > 0
-                ? sumCouncilScores.divide(BigDecimal.valueOf(councilSubmittedCount), 2, RoundingMode.HALF_UP)
-                : BigDecimal.ZERO;
-
-        BigDecimal reviewerScore = reviewerEval != null && reviewerEval.getStatus() == EvaluationStatus.SUBMITTED
-                ? reviewerEval.getTotalScore()
-                : null;
-
-        BigDecimal finalScore = calculateFinalScore(reviewerScore, councilAvg);
-        String grade = determineGrade(finalScore);
-
-        TopicFinalResult existingResult = results.findByTopic_Id(topicId).orElse(null);
-
-        return new TopicSummaryView(
-                topic,
-                council,
-                assignment.getReviewer(),
-                reviewerEval,
-                memberScores,
-                isFullyEvaluated,
-                councilAvg,
-                reviewerScore,
-                finalScore,
-                grade,
-                existingResult
-        );
+    private BigDecimal submittedScore(Evaluation evaluation) {
+        return evaluation != null && evaluation.getStatus() == EvaluationStatus.SUBMITTED ? evaluation.getTotalScore() : null;
     }
 
     @PreAuthorize("hasRole('LECTURER')")
-    public TopicFinalResult confirmByPresident(Long topicId, String conclusion, String presidentEmail) {
-        TopicSummaryView summary = getSummaryView(topicId);
+    public TopicFinalResult confirmByPresident(Long registrationId, String conclusion, String presidentEmail) {
+        councils.lockAssessment(registrationId);
+        if (conclusion != null && conclusion.length() > 1000) throw new BusinessRuleException("Kết luận tối đa 1000 ký tự");
+        TopicSummaryView summary = getSummaryView(registrationId);
         UserAccount currentLecturer = users.getByEmail(presidentEmail);
 
         // Kiểm tra giảng viên có phải là Chủ tịch của hội đồng này
-        boolean isPresident = summary.council().getMembers().stream()
+        boolean isPresident = summary.needsCouncil() && summary.council() != null && summary.council().getMembers().stream()
                 .anyMatch(m -> m.getRole() == CouncilRole.PRESIDENT && m.getLecturer().getId().equals(currentLecturer.getId()));
         if (!isPresident) {
             throw new AccessDeniedException("Chỉ Chủ tịch hội đồng mới có quyền xác nhận kết quả cuối cùng");
@@ -142,18 +158,16 @@ public class ResultService {
             throw new BusinessRuleException("Chưa đủ điểm: Tất cả thành viên hội đồng và giảng viên phản biện phải xác nhận nộp điểm trước!");
         }
 
-        TopicFinalResult result = results.findByTopic_Id(topicId)
+        TopicFinalResult result = results.findByRegistration_Id(registrationId)
                 .orElseGet(() -> {
                     TopicFinalResult r = new TopicFinalResult();
-                    r.setTopic(summary.topic());
+                    r.setRegistration(summary.registration());
                     r.setCouncil(summary.council());
                     return r;
                 });
 
-        result.setReviewerScore(summary.reviewerScore());
-        result.setCouncilAvgScore(summary.councilAvgScore());
-        result.setFinalScore(summary.finalScore());
-        result.setGrade(summary.grade());
+        if (result.isPresidentConfirmed() || result.isPublished()) throw new BusinessRuleException("Kết quả đã chốt, không thể ghi đè");
+        applyScores(result, summary);
         result.setConclusion(conclusion == null ? "" : conclusion.trim());
         result.setPresidentConfirmed(true);
         result.setPresidentConfirmedAt(Instant.now());
@@ -162,22 +176,37 @@ public class ResultService {
     }
 
     @PreAuthorize("hasAnyRole('DEAN', 'ADMIN')")
-    public TopicFinalResult publish(Long topicId) {
-        TopicFinalResult result = results.findByTopic_Id(topicId)
-                .orElseThrow(() -> new BusinessRuleException("Đề tài chưa được Chủ tịch hội đồng xác nhận kết quả"));
-
-        if (!result.isPresidentConfirmed()) {
-            throw new BusinessRuleException("Đề tài chưa được Chủ tịch hội đồng xác nhận kết quả");
+    public TopicFinalResult publish(Long registrationId) {
+        councils.lockAssessment(registrationId);
+        TopicSummaryView summary = getSummaryView(registrationId);
+        TopicFinalResult result = results.findByRegistration_Id(registrationId).orElse(null);
+        boolean finalized = result != null && result.isPresidentConfirmed();
+        if (!finalized && !summary.isFullyEvaluated()) throw new BusinessRuleException("Chưa đủ điểm hợp lệ");
+        if (summary.needsCouncil() && !finalized)
+            throw new BusinessRuleException("Cần Chủ tịch hội đồng xác nhận trước khi Khoa công bố");
+        if (result == null) {
+            result = new TopicFinalResult();
+            result.setRegistration(summary.registration());
+            result.setCouncil(summary.council());
         }
-
+        if (!finalized && !result.isPublished()) {
+            applyScores(result, summary);
+            if (Boolean.FALSE.equals(summary.defenseAllowed())) {
+                String reason = summary.reviewerEvaluation().getComments();
+                result.setConclusion("Không được bảo vệ: " + (reason.length() <= 970 ? reason : reason.substring(0, 970) + "…"));
+            } else {
+                result.setConclusion("Khoa đã xác nhận kết quả đánh giá");
+            }
+        }
         result.setPublished(true);
         result.setPublishedAt(Instant.now());
         return results.save(result);
     }
 
     @PreAuthorize("hasAnyRole('DEAN', 'ADMIN')")
-    public TopicFinalResult revoke(Long topicId) {
-        TopicFinalResult result = results.findByTopic_Id(topicId)
+    public TopicFinalResult revoke(Long registrationId) {
+        councils.lockAssessment(registrationId);
+        TopicFinalResult result = results.findByRegistration_Id(registrationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy kết quả đề tài"));
         result.setPublished(false);
         return results.save(result);
@@ -185,26 +214,17 @@ public class ResultService {
 
     @PreAuthorize("hasRole('STUDENT')")
     @Transactional(readOnly = true)
-    public StudentResultView getMyStudentResult(String studentEmail) {
+    public List<StudentResultView> getMyStudentResults(String studentEmail) {
         UserAccount student = users.getByEmail(studentEmail);
-        var memberships = groupMembers.findByStudent_Id(student.getId());
-        if (memberships.isEmpty()) {
-            return null;
-        }
-
-        for (var member : memberships) {
-            Long groupId = member.getGroup().getId();
-            GroupTopicRegistration reg = groupRegistrations.findByGroup_Id(groupId).orElse(null);
-            if (reg != null && reg.getTopic() != null) {
-                TopicFinalResult res = results.findByTopic_Id(reg.getTopic().getId()).orElse(null);
-                if (res != null && res.isPublished()) {
-                    return new StudentResultView(member.getGroup(), reg.getTopic(), res);
-                } else if (res != null) {
-                    return new StudentResultView(member.getGroup(), reg.getTopic(), null); // Chưa công bố
-                }
+        List<StudentResultView> views = new ArrayList<>();
+        for (var member : groupMembers.findByStudent_Id(student.getId())) {
+            var reg = groupRegistrations.findByGroup_Id(member.getGroup().getId()).orElse(null);
+            if (reg != null && reg.getStatus() == vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus.APPROVED) {
+                var result = results.findByRegistration_Id(reg.getId()).filter(TopicFinalResult::isPublished).orElse(null);
+                views.add(new StudentResultView(member.getGroup(), reg.getTopic(), result));
             }
         }
-        return null;
+        return views;
     }
 
     @PreAuthorize("hasAnyRole('DEAN', 'ADMIN')")
@@ -213,13 +233,22 @@ public class ResultService {
         return results.findByRoundId(roundId);
     }
 
-    private BigDecimal calculateFinalScore(BigDecimal reviewerScore, BigDecimal councilAvg) {
-        if (reviewerScore != null) {
-            BigDecimal partRev = reviewerScore.multiply(BigDecimal.valueOf(0.3));
-            BigDecimal partCou = councilAvg.multiply(BigDecimal.valueOf(0.7));
-            return partRev.add(partCou).setScale(2, RoundingMode.HALF_UP);
-        }
-        return councilAvg.setScale(2, RoundingMode.HALF_UP);
+    private void applyScores(TopicFinalResult result, TopicSummaryView summary) {
+        result.setReviewerScore(summary.reviewerScore());
+        result.setSupporterScore(summary.supporterScore());
+        result.setDefenseAllowed(summary.defenseAllowed());
+        result.setCouncilAvgScore(summary.councilAvgScore());
+        result.setFinalScore(summary.finalScore());
+        result.setGrade(summary.grade());
+    }
+
+    @PreAuthorize("hasAnyRole('DEAN','ADMIN')")
+    @Transactional(readOnly = true)
+    public List<TopicSummaryView> findSummariesByRound(Long roundId) {
+        return groupRegistrations.findAllByOrderBySubmittedAtDesc().stream()
+                .filter(r -> r.getStatus() == vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus.APPROVED
+                        && r.getTopic().getRound().getId().equals(roundId) && councils.getAssignment(r.getId()) != null)
+                .map(r -> getSummaryView(r.getId())).toList();
     }
 
     private String determineGrade(BigDecimal score) {
@@ -243,6 +272,7 @@ public class ResultService {
     }
 
     public record TopicSummaryView(
+            GroupTopicRegistration registration,
             Topic topic,
             Council council,
             UserAccount reviewer,
@@ -253,8 +283,31 @@ public class ResultService {
             BigDecimal reviewerScore,
             BigDecimal finalScore,
             String grade,
-            TopicFinalResult finalResult
+            TopicFinalResult finalResult,
+            UserAccount supporter,
+            Evaluation supporterEvaluation,
+            BigDecimal supporterScore,
+            Boolean defenseAllowed,
+            boolean needsCouncil,
+            boolean legacyAssessment
     ) {
+        public UserAccount getSupporter() { return supporter; }
+        public Evaluation getSupporterEvaluation() { return supporterEvaluation; }
+        public BigDecimal getSupporterScore() { return supporterScore; }
+        public Boolean getDefenseAllowed() { return defenseAllowed; }
+        public boolean isNeedsCouncil() { return needsCouncil; }
+        public boolean isLegacyAssessment() { return legacyAssessment; }
+        public String getFormula() {
+            if (legacyAssessment) return "Hồ sơ phân công trước nâng cấp: trung bình các phiếu đã nộp, mỗi người chấm tính một lần";
+            return switch (topic.getRound().getType()) {
+                case MON_HOC -> "Điểm GV được phân công chấm";
+                case TLCN -> "(Điểm GV hỗ trợ + Điểm GVPB) / 2";
+                case KLTN -> Boolean.FALSE.equals(defenseAllowed) ? "Không được bảo vệ: điểm cuối cùng = 0"
+                        : "(Điểm GVPB + Điểm trung bình hội đồng) / 2";
+                case NCKH -> "Trung bình điểm các thành viên hội đồng nghiệm thu; chưa thiết lập ngưỡng xếp loại";
+            };
+        }
+        public GroupTopicRegistration getRegistration() { return registration; }
         public Topic getTopic() { return topic; }
         public Council getCouncil() { return council; }
         public UserAccount getReviewer() { return reviewer; }

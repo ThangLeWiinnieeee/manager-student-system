@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService;
 import vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration;
 import vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationRepository;
 import vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus;
@@ -29,13 +29,13 @@ import vn.edu.fit.topicmanagement.user.UserAccountService;
 public class CouncilAdminController {
 
     private final CouncilService councils;
-    private final RegistrationPeriodService periods;
+    private final CourseRegistrationService periods;
     private final UserAccountService users;
     private final GroupTopicRegistrationRepository groupRegistrations;
 
     public CouncilAdminController(
             CouncilService councils,
-            RegistrationPeriodService periods,
+            CourseRegistrationService periods,
             UserAccountService users,
             GroupTopicRegistrationRepository groupRegistrations) {
         this.councils = councils;
@@ -212,9 +212,9 @@ public class CouncilAdminController {
 
         java.util.Map<Long, TopicAssignment> assignmentsMap = new java.util.HashMap<>();
         for (GroupTopicRegistration reg : approvedRegistrations) {
-            TopicAssignment asgn = councils.getAssignment(reg.getTopic().getId());
+            TopicAssignment asgn = councils.getAssignment(reg.getId());
             if (asgn != null) {
-                assignmentsMap.put(reg.getTopic().getId(), asgn);
+                assignmentsMap.put(reg.getId(), asgn);
             }
         }
 
@@ -230,19 +230,21 @@ public class CouncilAdminController {
 
     @PostMapping("/assignments")
     public String saveAssignment(
-            @RequestParam("topicId") Long topicId,
+            @RequestParam("registrationId") Long registrationId,
             @RequestParam(value = "councilId", required = false) Long councilId,
             @RequestParam(value = "reviewerId", required = false) Long reviewerId,
+            @RequestParam(value = "supporterId", required = false) Long supporterId,
             @RequestParam(value = "roundId", required = false) Long roundId,
             RedirectAttributes redirect) {
         TopicAssignmentForm form = new TopicAssignmentForm();
-        form.setTopicId(topicId);
+        form.setRegistrationId(registrationId);
         form.setCouncilId(councilId);
         form.setReviewerId(reviewerId);
+        form.setSupporterId(supporterId);
 
         try {
             councils.assignTopic(form);
-            redirect.addFlashAttribute("success", "Đã phân công hội đồng và phản biện thành công cho đề tài");
+            redirect.addFlashAttribute("success", "Đã lưu phân công đánh giá cho nhóm");
         } catch (BusinessRuleException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
         }

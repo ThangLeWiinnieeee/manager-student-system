@@ -7,6 +7,9 @@ import java.util.List;
 public interface StudentGroupRepository
         extends JpaRepository<StudentGroup, Long> {
 
+    @org.springframework.data.jpa.repository.Query("select g.roundId from StudentGroup g where g.id = :id")
+    java.util.Optional<Long> findRoundIdById(@org.springframework.data.repository.query.Param("id") Long id);
+
     // Lay tat ca nhom theo thu tu moi nhat
     List<StudentGroup> findAllByOrderByCreatedAtDesc();
 

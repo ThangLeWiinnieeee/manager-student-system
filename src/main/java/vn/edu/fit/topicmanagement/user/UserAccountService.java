@@ -5,8 +5,8 @@ import java.util.Locale;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edu.fit.topicmanagement.major.Major;
-import vn.edu.fit.topicmanagement.major.MajorRepository;
+import vn.edu.fit.topicmanagement.department.Department;
+import vn.edu.fit.topicmanagement.department.DepartmentRepository;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 import vn.edu.fit.topicmanagement.common.exception.ResourceNotFoundException;
 
@@ -14,15 +14,15 @@ import vn.edu.fit.topicmanagement.common.exception.ResourceNotFoundException;
 @Transactional
 public class UserAccountService {
     private final UserAccountRepository users;
-    private final MajorRepository majors;
+    private final DepartmentRepository departments;
     private final PasswordEncoder passwordEncoder;
 
     public UserAccountService(
             UserAccountRepository users,
-            MajorRepository majors,
+            DepartmentRepository departments,
             PasswordEncoder passwordEncoder) {
         this.users = users;
-        this.majors = majors;
+        this.departments = departments;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -55,7 +55,7 @@ public class UserAccountService {
     }
 
     public UserAccount update(Long id, UserForm form, String currentEmail) {
-        UserAccount account = get(id);
+        UserAccount account = lock(id);
         if (!form.isEnabled()) validateNotCurrentAccount(account, currentEmail);
         if (account.getRole() == Role.ADMIN
                 && account.getEmail().equalsIgnoreCase(currentEmail)
@@ -64,6 +64,11 @@ public class UserAccountService {
         }
         String email = normalizeEmail(form.getEmail());
         validateUniqueEmail(email, id);
+        if (account.getRole() != form.getRole() || (account.isEnabled() && !form.isEnabled()))
+            assertNoOpenResponsibilities(account);
+        if (account.getRole() != form.getRole() || account.isEnabled() != form.isEnabled()
+                || !account.getEmail().equalsIgnoreCase(email))
+            account.invalidateSessions();
         apply(account, form, email);
         return account;
     }
@@ -74,8 +79,10 @@ public class UserAccountService {
     }
 
     public void toggle(Long id, String currentEmail) {
-        UserAccount account = get(id);
+        UserAccount account = lock(id);
         validateNotCurrentAccount(account, currentEmail);
+        if (account.isEnabled()) assertNoOpenResponsibilities(account);
+        account.invalidateSessions();
         account.setEnabled(!account.isEnabled());
     }
 
@@ -97,10 +104,20 @@ public class UserAccountService {
         form.setEmail(account.getEmail());
         form.setRole(account.getRole());
         form.setEnabled(account.isEnabled());
-        if (account.getMajor() != null) {
-            form.setMajorId(account.getMajor().getId());
+        if (account.getDepartment() != null) {
+            form.setDepartmentId(account.getDepartment().getId());
         }
         return form;
+    }
+
+    private UserAccount lock(Long id) {
+        return users.findLockedById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản"));
+    }
+
+    private void assertNoOpenResponsibilities(UserAccount account) {
+        if (users.hasOpenResponsibilities(account.getId(), java.time.LocalDateTime.now()))
+            throw new BusinessRuleException("Tài khoản còn phụ trách lớp đang mở hoặc tham gia nhóm chưa chốt kết quả. "
+                    + "Cần hoàn tất nhiệm vụ trước khi khóa / đổi vai trò.");
     }
 
     private void validateUniqueEmail(String email, Long currentId) {
@@ -117,19 +134,19 @@ public class UserAccountService {
         account.setEmail(email);
         account.setRole(form.getRole());
         account.setEnabled(form.isEnabled());
-        account.setMajor(form.getRole() == Role.STUDENT ? resolveMajor(form.getMajorId()) : null);
+        account.setDepartment(form.getRole() == Role.STUDENT ? resolveDepartment(form.getDepartmentId()) : null);
     }
 
-    private Major resolveMajor(Long id) {
+    private Department resolveDepartment(Long id) {
         if (id == null) {
             return null;
         }
-        Major major = majors.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Chuyên ngành không tồn tại"));
-        if (!major.isEnabled()) {
-            throw new BusinessRuleException("Chuyên ngành đã bị khóa");
+        Department department = departments.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Bộ môn không tồn tại"));
+        if (!department.isEnabled()) {
+            throw new BusinessRuleException("Bộ môn đã bị khóa");
         }
-        return major;
+        return department;
     }
 
     private static void validateNotCurrentAccount(UserAccount account, String currentEmail) {

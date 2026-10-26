@@ -50,6 +50,7 @@ class ResultServiceTest {
     private UserAccount president;
     private UserAccount reviewer;
     private TopicAssignment assignment;
+    private GroupTopicRegistration registration;
 
     @BeforeEach
     void setUp() {
@@ -57,6 +58,10 @@ class ResultServiceTest {
 
         topic = new Topic();
         topic.setId(1L);
+        var course = new vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration();
+        var window = new vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod();
+        window.setType(vn.edu.fit.topicmanagement.registrationperiod.RoundType.KLTN);
+        course.setPeriod(window); topic.setRound(course);
         topic.setTitle("Ứng dụng Spring Boot");
 
         president = new UserAccount();
@@ -72,8 +77,15 @@ class ResultServiceTest {
         council = new Council();
         council.setId(100L);
         council.setName("Hội đồng 01");
-        council.setMembers(List.of(new CouncilMember(council, president, CouncilRole.PRESIDENT)));
+        var secretary = new UserAccount(); secretary.setId(30L);
+        var member = new UserAccount(); member.setId(40L);
+        council.setMembers(List.of(new CouncilMember(council, president, CouncilRole.PRESIDENT),
+                new CouncilMember(council, secretary, CouncilRole.SECRETARY), new CouncilMember(council, member, CouncilRole.MEMBER)));
 
+        registration = new GroupTopicRegistration();
+        registration.setTopic(topic);
+        registration.setStatus(vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus.APPROVED);
+        org.springframework.test.util.ReflectionTestUtils.setField(registration, "id", 1L);
         assignment = new TopicAssignment();
         assignment.setTopic(topic);
         assignment.setCouncil(council);
@@ -82,7 +94,7 @@ class ResultServiceTest {
 
     @Test
     void confirmByPresident_notAllScoresSubmitted_throwsException() {
-        when(topics.get(1L)).thenReturn(topic);
+        when(councils.getRegistration(1L)).thenReturn(registration);
         when(councils.getAssignment(1L)).thenReturn(assignment);
         when(evaluations.findByTopic(1L)).thenReturn(List.of()); // Chưa ai nộp điểm
         when(users.getByEmail("president@fit.edu.vn")).thenReturn(president);
@@ -94,7 +106,7 @@ class ResultServiceTest {
 
     @Test
     void confirmByPresident_allScoresSubmitted_success() {
-        when(topics.get(1L)).thenReturn(topic);
+        when(councils.getRegistration(1L)).thenReturn(registration);
         when(councils.getAssignment(1L)).thenReturn(assignment);
 
         Evaluation evalReviewer = new Evaluation();
@@ -102,6 +114,7 @@ class ResultServiceTest {
         evalReviewer.setEvaluator(reviewer);
         evalReviewer.setTotalScore(BigDecimal.valueOf(8.0));
         evalReviewer.setStatus(EvaluationStatus.SUBMITTED);
+        evalReviewer.setDefenseAllowed(true);
 
         Evaluation evalPres = new Evaluation();
         evalPres.setEvaluationType(EvaluationType.COUNCIL);
@@ -109,34 +122,32 @@ class ResultServiceTest {
         evalPres.setTotalScore(BigDecimal.valueOf(9.0));
         evalPres.setStatus(EvaluationStatus.SUBMITTED);
 
-        when(evaluations.findByTopic(1L)).thenReturn(List.of(evalReviewer, evalPres));
+        var scores = new java.util.ArrayList<Evaluation>(List.of(evalReviewer, evalPres));
+        for (var member : council.getMembers().subList(1, 3)) {
+            var evaluation = new Evaluation(); evaluation.setEvaluator(member.getLecturer());
+            evaluation.setStatus(EvaluationStatus.SUBMITTED); evaluation.setTotalScore(new BigDecimal("9.00"));
+            scores.add(evaluation);
+        }
+        when(evaluations.findByTopic(1L)).thenReturn(scores);
         when(users.getByEmail("president@fit.edu.vn")).thenReturn(president);
-        when(results.findByTopic_Id(1L)).thenReturn(Optional.empty());
+        when(results.findByRegistration_Id(1L)).thenReturn(Optional.empty());
         when(results.save(any(TopicFinalResult.class))).thenAnswer(i -> i.getArgument(0));
 
         TopicFinalResult finalRes = service.confirmByPresident(1L, "Bảo vệ xuất sắc", "president@fit.edu.vn");
         assertNotNull(finalRes);
         assertTrue(finalRes.isPresidentConfirmed());
-        // Điểm: 8.0 * 0.3 + 9.0 * 0.7 = 2.4 + 6.3 = 8.70 (Xếp loại GIỎI)
-        assertEquals(BigDecimal.valueOf(8.70).setScale(2), finalRes.getFinalScore());
+        // Trung bình cộng (8 + 9) / 2 = 8.50
+        assertEquals(BigDecimal.valueOf(8.50).setScale(2), finalRes.getFinalScore());
         assertEquals("GIỎI", finalRes.getGrade());
         assertEquals("Bảo vệ xuất sắc", finalRes.getConclusion());
     }
 
     @Test
-    void publishAndRevoke_byDean_success() {
-        TopicFinalResult r = new TopicFinalResult();
-        r.setPresidentConfirmed(true);
-        r.setPublished(false);
-        when(results.findByTopic_Id(1L)).thenReturn(Optional.of(r));
-        when(results.save(any(TopicFinalResult.class))).thenAnswer(i -> i.getArgument(0));
-
-        TopicFinalResult published = service.publish(1L);
-        assertTrue(published.isPublished());
-        assertNotNull(published.getPublishedAt());
-
-        TopicFinalResult revoked = service.revoke(1L);
-        assertFalse(revoked.isPublished());
+    void publishRefusesIncompleteAssessment() {
+        when(councils.getRegistration(1L)).thenReturn(registration);
+        when(councils.getAssignment(1L)).thenReturn(assignment);
+        when(evaluations.findByTopic(1L)).thenReturn(List.of());
+        assertThrows(BusinessRuleException.class, () -> service.publish(1L));
     }
 
     @Test
@@ -152,19 +163,21 @@ class ResultServiceTest {
 
         GroupTopicRegistration reg = new GroupTopicRegistration();
         reg.setGroup(group);
+        reg.setStatus(vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus.APPROVED);
+        org.springframework.test.util.ReflectionTestUtils.setField(reg, "id", 1L);
         reg.setTopic(topic);
         when(groupRegistrations.findByGroup_Id(group.getId())).thenReturn(Optional.of(reg));
 
         TopicFinalResult r = new TopicFinalResult();
         r.setPublished(false); // Chưa công bố
-        when(results.findByTopic_Id(topic.getId())).thenReturn(Optional.of(r));
+        when(results.findByRegistration_Id(topic.getId())).thenReturn(Optional.of(r));
 
-        ResultService.StudentResultView viewNotPub = service.getMyStudentResult("sv@fit.edu.vn");
+        ResultService.StudentResultView viewNotPub = service.getMyStudentResults("sv@fit.edu.vn").getFirst();
         assertNotNull(viewNotPub);
         assertNull(viewNotPub.result()); // Khi chưa công bố, result = null
 
         r.setPublished(true); // Đã công bố
-        ResultService.StudentResultView viewPub = service.getMyStudentResult("sv@fit.edu.vn");
+        ResultService.StudentResultView viewPub = service.getMyStudentResults("sv@fit.edu.vn").getFirst();
         assertNotNull(viewPub);
         assertNotNull(viewPub.result());
     }

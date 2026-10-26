@@ -28,8 +28,7 @@
     <c:choose>
         <c:when test="${empty openPeriods}">
             <p>
-                Hiện không có đợt đăng ký nào
-                đang mở cho sinh viên.
+                Bạn chưa tham gia lớp đề tài nào đang mở đăng ký nhóm. Hãy về “Nhóm của tôi” để nhập mã GV cung cấp.
             </p>
 
             <a class="button"
@@ -56,7 +55,7 @@
                        required>
 
                 <label for="roundId">
-                    Đợt đăng ký
+                    Môn/lớp đăng ký
                 </label>
 
                 <select id="roundId"
@@ -64,7 +63,7 @@
                         required>
 
                     <option value="">
-                        -- Chọn đợt đăng ký --
+                        -- Chọn môn/lớp đăng ký --
                     </option>
 
                     <c:forEach items="${openPeriods}"
@@ -74,7 +73,7 @@
                             ${groupForm.roundId == period.id
                               ? 'selected="selected"' : ''}>
 
-                            <c:out value="${period.name}"/>
+                            <c:out value="${period.selectionLabel}"/> · Tối đa <c:out value="${period.maxMembers}"/> SV · <c:out value="${period.registrationMode.displayName}"/>
 
                         </option>
 

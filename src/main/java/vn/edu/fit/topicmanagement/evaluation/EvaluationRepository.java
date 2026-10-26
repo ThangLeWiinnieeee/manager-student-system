@@ -6,11 +6,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
 
-    Optional<Evaluation> findByTopic_IdAndEvaluator_Id(Long topicId, Long evaluatorId);
+    Optional<Evaluation> findByRegistration_IdAndEvaluator_Id(Long registrationId, Long evaluatorId);
 
-    List<Evaluation> findByTopic_Id(Long topicId);
+    List<Evaluation> findByRegistration_Id(Long registrationId);
 
     List<Evaluation> findByEvaluator_Id(Long evaluatorId);
 
-    long countByTopic_IdAndStatus(Long topicId, EvaluationStatus status);
+    long countByRegistration_IdAndStatus(Long registrationId, EvaluationStatus status);
 }

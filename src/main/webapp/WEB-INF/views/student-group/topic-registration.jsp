@@ -3,6 +3,7 @@
          pageEncoding="UTF-8" %>
 
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 
 <c:set var="pageTitle" value="Đăng ký đề tài"/>
 
@@ -17,7 +18,7 @@
             Nhóm:
             <c:out value="${group.name}"/>
 
-            | Đợt đăng ký:
+            | Môn/lớp đăng ký:
             <c:out value="${group.roundId}"/>
         </p>
     </div>
@@ -76,6 +77,19 @@
 
 </c:if>
 
+
+<p>Môn/lớp: <strong><c:out value="${round.courseLabel}"/></strong> · Tối đa ${round.maxMembers} thành viên/nhóm · <c:out value="${round.registrationMode.displayName}"/></p>
+<c:if test="${round.registrationMode == 'SELF_PROPOSED' and isLeader and (empty registration or registration.status == 'REJECTED')}">
+    <form:form modelAttribute="proposalForm" method="post" action="${pageContext.request.contextPath}/student/my-groups/${group.id}/topics/propose" cssClass="form-card">
+        <h2>Đề xuất đề tài của nhóm</h2>
+        <p>Các nhóm được phép trùng tên đề tài; báo cáo và điểm được quản lý riêng.</p>
+        <form:errors path="*" cssClass="alert error" element="div"/>
+        <form:label path="title">Tên đề tài</form:label><form:input path="title" maxlength="200" required="required"/>
+        <form:label path="description">Nội dung đề tài</form:label><form:textarea path="description" maxlength="2000" required="required"/>
+        <button class="primary" type="submit">Gửi đề xuất</button>
+    </form:form>
+</c:if>
+<c:if test="${round.registrationMode != 'SELF_PROPOSED'}">
 <%-- DANH SACH DE TAI --%>
 
 <section class="panel">
@@ -92,7 +106,7 @@
                 <tr>
                     <th>Mã đề tài</th>
                     <th>Tên đề tài</th>
-                    <th>Chuyên ngành</th>
+                    <th>Bộ môn</th>
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
                 </tr>
@@ -114,7 +128,7 @@
                         </td>
 
                         <td>
-                            <c:out value="${topic.major.name}" default="Không giới hạn"/>
+                            <c:out value="${topic.department.name}" default="Không giới hạn"/>
                         </td>
 
                         <td>
@@ -162,7 +176,7 @@
                     <tr>
                         <td colspan="5" class="empty">
                             Chưa có đề tài nào được công bố
-                            trong đợt đăng ký này.
+                            trong môn/lớp đăng ký này.
                         </td>
                     </tr>
 
@@ -205,4 +219,5 @@
 
 </section>
 
+</c:if>
 <%@ include file="../common/footer.jsp" %>

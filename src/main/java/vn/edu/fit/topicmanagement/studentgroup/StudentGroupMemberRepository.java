@@ -21,6 +21,7 @@ public interface StudentGroupMemberRepository
     );
 
     // Dem so thanh vien cua mot nhom
+    boolean existsByGroup_IdAndStudent_EmailIgnoreCase(Long groupId, String email);
     long countByGroup_Id(Long groupId);
 
     // Tim cac nhom ma sinh vien tham gia

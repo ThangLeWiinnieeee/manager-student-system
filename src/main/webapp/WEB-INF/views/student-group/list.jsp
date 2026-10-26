@@ -71,7 +71,7 @@
         </span>
     </div>
 
-    <p>Thông tin các nhóm đã tạo trong từng đợt đăng ký.</p>
+    <p>Thông tin các nhóm đã tạo trong từng môn/lớp đăng ký.</p>
 
     <div class="table-wrap"
          role="region"
@@ -84,7 +84,7 @@
             <tr>
                 <th>Mã nhóm</th>
                 <th>Tên nhóm</th>
-                <th>Đợt đăng ký</th>
+                <th>Môn/lớp đăng ký</th>
                 <th>Thao tác</th>
             </tr>
             </thead>

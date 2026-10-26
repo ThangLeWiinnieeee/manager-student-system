@@ -15,13 +15,19 @@ public class GroupTopicRegistration {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "group_id", nullable = false)
     private StudentGroup group;
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "topic_id", nullable = false)
     private Topic topic;
+
+    @Column(name = "exclusive_topic_id", unique = true)
+    private Long exclusiveTopicId;
+
+    public Long getExclusiveTopicId() { return exclusiveTopicId; }
+    public void setExclusiveTopicId(Long value) { exclusiveTopicId = value; }
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

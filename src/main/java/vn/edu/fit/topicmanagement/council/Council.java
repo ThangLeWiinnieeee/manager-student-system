@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration;
 
 @Entity
 @Table(name = "councils")
@@ -24,7 +24,7 @@ public class Council {
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "round_id")
-    private RegistrationPeriod round;
+    private CourseRegistration round;
 
     @Column(length = 200)
     private String location;
@@ -46,8 +46,8 @@ public class Council {
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public RegistrationPeriod getRound() { return round; }
-    public void setRound(RegistrationPeriod round) { this.round = round; }
+    public CourseRegistration getRound() { return round; }
+    public void setRound(CourseRegistration round) { this.round = round; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public LocalDateTime getReportDate() { return reportDate; }

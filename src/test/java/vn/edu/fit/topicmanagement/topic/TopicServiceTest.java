@@ -17,10 +17,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
-import vn.edu.fit.topicmanagement.major.Major;
-import vn.edu.fit.topicmanagement.major.MajorService;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
+import vn.edu.fit.topicmanagement.department.Department;
+import vn.edu.fit.topicmanagement.department.DepartmentService;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService;
 import vn.edu.fit.topicmanagement.registrationperiod.RoundType;
 import vn.edu.fit.topicmanagement.user.Role;
 import vn.edu.fit.topicmanagement.user.UserAccount;
@@ -29,15 +29,17 @@ import vn.edu.fit.topicmanagement.user.UserAccountService;
 @ExtendWith(MockitoExtension.class)
 class TopicServiceTest {
     @Mock TopicRepository topics;
-    @Mock RegistrationPeriodService periods;
-    @Mock MajorService majors;
+    @Mock vn.edu.fit.topicmanagement.council.TopicAssignmentRepository assignments;
+    @Mock vn.edu.fit.topicmanagement.studentgroup.StudentGroupMemberRepository members;
+    @Mock CourseRegistrationService periods;
+    @Mock DepartmentService departments;
     @Mock UserAccountService users;
 
     private UserAccount owner;
     private UserAccount lecturerA;
     private UserAccount lecturerB;
-    private Major major;
-    private RegistrationPeriod round;
+    private Department department;
+    private CourseRegistration round;
     private TopicForm validForm;
 
     @BeforeEach
@@ -45,19 +47,20 @@ class TopicServiceTest {
         owner = lecturer("gv001@fit.edu.vn");
         lecturerA = lecturer("gv002@fit.edu.vn");
         lecturerB = lecturer("gv003@fit.edu.vn");
-        major = new Major();
-        major.setCode("SE");
-        major.setName("Kỹ thuật phần mềm");
-        major.setEnabled(true);
-        round = new RegistrationPeriod();
-        round.setName("Đợt KLTN HK1");
-        round.setType(RoundType.KLTN);
+        department = new Department();
+        department.setCode("SE");
+        department.setName("Kỹ thuật phần mềm");
+        department.setEnabled(true);
+        round = new CourseRegistration();
+        round.setPeriod(new vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod());
+        round.setCourseName("Đợt KLTN HK1");
+        round.getPeriod().setType(RoundType.KLTN);
 
         validForm = new TopicForm();
         validForm.setTitle("Xây dựng hệ thống quản lý đề tài");
         validForm.setDescription("Đồ án cuối kỳ");
         validForm.setRoundId(1L);
-        validForm.setMajorId(1L);
+        validForm.setDepartmentId(1L);
         validForm.setAdvisorIds(List.of(2L));
     }
 
@@ -72,15 +75,16 @@ class TopicServiceTest {
 
     private void stubCreateHappyPath() {
         when(users.getByEmail("gv001@fit.edu.vn")).thenReturn(owner);
-        when(majors.get(1L)).thenReturn(major);
+        when(departments.get(1L)).thenReturn(department);
         when(periods.get(1L)).thenReturn(round);
     }
 
     private Topic persistedDraftTopic() {
         Topic topic = new Topic();
         topic.setTitle(validForm.getTitle());
+        topic.setDescription(validForm.getDescription());
         topic.setCreatedBy(owner);
-        topic.setMajor(major);
+        topic.setDepartment(department);
         topic.setRound(round);
         topic.getAdvisors().add(lecturerA);
         topic.setStatus(TopicStatus.DRAFT);
@@ -93,7 +97,7 @@ class TopicServiceTest {
         when(users.get(2L)).thenReturn(lecturerA);
         when(topics.save(any(Topic.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(topics.findById(any())).thenAnswer(invocation -> Optional.of(persistedDraftTopic()));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         Topic submitted = service.create("gv001@fit.edu.vn", validForm, true);
 
@@ -106,7 +110,7 @@ class TopicServiceTest {
         stubCreateHappyPath();
         when(users.get(2L)).thenReturn(lecturerA);
         when(topics.save(any(Topic.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         Topic draft = service.create("gv001@fit.edu.vn", validForm, false);
 
@@ -121,7 +125,7 @@ class TopicServiceTest {
         when(users.get(3L)).thenReturn(lecturerB);
         when(topics.save(any(Topic.class))).thenAnswer(invocation -> invocation.getArgument(0));
         validForm.setAdvisorIds(List.of(2L, 3L));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         Topic draft = service.create("gv001@fit.edu.vn", validForm, false);
 
@@ -133,7 +137,7 @@ class TopicServiceTest {
     void rejectsThreeAdvisors() {
         stubCreateHappyPath();
         validForm.setAdvisorIds(List.of(2L, 3L, 4L));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertThrows(BusinessRuleException.class,
                 () -> service.create("gv001@fit.edu.vn", validForm, false));
@@ -144,7 +148,7 @@ class TopicServiceTest {
     void rejectsZeroAdvisors() {
         stubCreateHappyPath();
         validForm.setAdvisorIds(List.of());
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertThrows(BusinessRuleException.class,
                 () -> service.create("gv001@fit.edu.vn", validForm, false));
@@ -155,7 +159,7 @@ class TopicServiceTest {
         stubCreateHappyPath();
         when(users.get(2L)).thenReturn(lecturerA);
         lecturerA.setRole(Role.STUDENT);
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertThrows(BusinessRuleException.class,
                 () -> service.create("gv001@fit.edu.vn", validForm, false));
@@ -167,7 +171,7 @@ class TopicServiceTest {
         when(topics.findById(10L)).thenReturn(Optional.of(draft));
         doThrow(new BusinessRuleException("Ngoài thời gian đăng ký đề tài của giảng viên"))
                 .when(periods).assertGvWindowOpen(round.getId());
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertThrows(BusinessRuleException.class, () -> service.submit(10L, "gv001@fit.edu.vn"));
         verify(topics, never()).save(any(Topic.class));
@@ -176,7 +180,7 @@ class TopicServiceTest {
     @Test
     void illegalTransitionDraftToApprovedBlocked() {
         when(topics.findById(10L)).thenReturn(Optional.of(persistedDraftTopic()));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertThrows(BusinessRuleException.class, () -> service.approve(10L));
     }
@@ -186,7 +190,7 @@ class TopicServiceTest {
         Topic pending = persistedDraftTopic();
         pending.setStatus(TopicStatus.PENDING);
         when(topics.findById(10L)).thenReturn(Optional.of(pending));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertThrows(BusinessRuleException.class, () -> service.publish(10L));
     }
@@ -197,7 +201,7 @@ class TopicServiceTest {
         pending.setStatus(TopicStatus.PENDING);
         when(topics.findById(10L)).thenReturn(Optional.of(pending));
         when(topics.save(any(Topic.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertEquals(TopicStatus.APPROVED, service.approve(10L).getStatus());
 
@@ -210,7 +214,7 @@ class TopicServiceTest {
         pending.setStatus(TopicStatus.PENDING);
         when(topics.findById(10L)).thenReturn(Optional.of(pending));
         when(topics.save(any(Topic.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         Topic rejected = service.reject(10L, "Thiếu cơ sở khoa học");
 
@@ -221,7 +225,7 @@ class TopicServiceTest {
     @Test
     void onlyOwnerCanEdit() {
         when(topics.findById(10L)).thenReturn(Optional.of(persistedDraftTopic()));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertThrows(BusinessRuleException.class,
                 () -> service.update(10L, "other@fit.edu.vn", validForm, false));
@@ -232,7 +236,7 @@ class TopicServiceTest {
         Topic approved = persistedDraftTopic();
         approved.setStatus(TopicStatus.APPROVED);
         when(topics.findById(10L)).thenReturn(Optional.of(approved));
-        TopicService service = new TopicService(topics, periods, majors, users);
+        TopicService service = new TopicService(topics, periods, departments, users, assignments, members);
 
         assertThrows(BusinessRuleException.class,
                 () -> service.update(10L, "gv001@fit.edu.vn", validForm, false));

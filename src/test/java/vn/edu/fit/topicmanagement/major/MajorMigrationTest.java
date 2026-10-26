@@ -35,7 +35,7 @@ class MajorMigrationTest {
                     SELECT 99, id FROM users WHERE email = 'LECTURER@migration.test'
                     """);
 
-            Flyway.configure().dataSource(url, "sa", "").locations(locations).load().migrate();
+            Flyway.configure().dataSource(url, "sa", "").locations(locations).target("12").load().migrate();
 
             try (var rows = sql.executeQuery("SELECT name FROM majors WHERE id = 99")) {
                 assertTrue(rows.next());

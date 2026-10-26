@@ -26,6 +26,10 @@ public class EvaluationForm {
     @Size(max = 2000, message = "Nhận xét tối đa 2000 ký tự")
     private String comments;
 
+    private Boolean defenseAllowed;
+    public Boolean getDefenseAllowed() { return defenseAllowed; }
+    public void setDefenseAllowed(Boolean value) { defenseAllowed = value; }
+
     private String action = "draft"; // "draft" hoặc "submit"
 
     public BigDecimal getScoreContent() { return scoreContent; }

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService;
 
 @Controller
 @RequestMapping("/dean/results")
@@ -19,9 +19,9 @@ import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
 public class DeanResultController {
 
     private final ResultService results;
-    private final RegistrationPeriodService periods;
+    private final CourseRegistrationService periods;
 
-    public DeanResultController(ResultService results, RegistrationPeriodService periods) {
+    public DeanResultController(ResultService results, CourseRegistrationService periods) {
         this.results = results;
         this.periods = periods;
     }
@@ -33,9 +33,9 @@ public class DeanResultController {
         var allPeriods = periods.findAll();
         Long currentRoundId = roundId != null ? roundId : (allPeriods.isEmpty() ? null : allPeriods.get(0).getId());
 
-        List<TopicFinalResult> roundResults = List.of();
+        List<ResultService.TopicSummaryView> roundResults = List.of();
         if (currentRoundId != null) {
-            roundResults = results.findByRound(currentRoundId);
+            roundResults = results.findSummariesByRound(currentRoundId);
         }
 
         model.addAttribute("periods", allPeriods);
@@ -44,13 +44,13 @@ public class DeanResultController {
         return "result/dean-list";
     }
 
-    @PostMapping("/topic/{topicId}/publish")
+    @PostMapping("/registration/{registrationId}/publish")
     public String publish(
-            @PathVariable Long topicId,
+            @PathVariable Long registrationId,
             @RequestParam(value = "roundId", required = false) Long roundId,
             RedirectAttributes redirect) {
         try {
-            results.publish(topicId);
+            results.publish(registrationId);
             redirect.addFlashAttribute("success", "Đã công bố kết quả đề tài cho sinh viên xem");
         } catch (BusinessRuleException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());
@@ -58,13 +58,13 @@ public class DeanResultController {
         return "redirect:/dean/results" + (roundId != null ? "?roundId=" + roundId : "");
     }
 
-    @PostMapping("/topic/{topicId}/revoke")
+    @PostMapping("/registration/{registrationId}/revoke")
     public String revoke(
-            @PathVariable Long topicId,
+            @PathVariable Long registrationId,
             @RequestParam(value = "roundId", required = false) Long roundId,
             RedirectAttributes redirect) {
         try {
-            results.revoke(topicId);
+            results.revoke(registrationId);
             redirect.addFlashAttribute("success", "Đã thu hồi kết quả đề tài");
         } catch (BusinessRuleException ex) {
             redirect.addFlashAttribute("error", ex.getMessage());

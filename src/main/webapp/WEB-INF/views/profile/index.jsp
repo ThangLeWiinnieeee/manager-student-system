@@ -13,7 +13,7 @@
     <dt>Email đăng nhập</dt><dd><c:out value="${account.email}"/></dd>
     <dt>Vai trò</dt><dd><c:out value="${account.role.displayName}"/></dd>
     <dt>Khoa</dt><dd>Công nghệ thông tin</dd>
-    <c:if test="${account.role == 'STUDENT'}"><dt>Chuyên ngành</dt><dd><c:out value="${empty account.major ? 'Chưa cập nhật' : account.major.name}"/></dd></c:if>
+    <c:if test="${account.role == 'STUDENT'}"><dt>Bộ môn</dt><dd><c:out value="${empty account.department ? 'Chưa cập nhật' : account.department.name}"/></dd></c:if>
 </dl>
 </section>
 <form:form modelAttribute="changePasswordForm" method="post" action="${pageContext.request.contextPath}/profile/password" cssClass="form-card narrow">
