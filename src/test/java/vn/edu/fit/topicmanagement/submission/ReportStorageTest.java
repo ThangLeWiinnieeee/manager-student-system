@@ -16,13 +16,17 @@ class ReportStorageTest {
     private static final String NAME = "12345678-1234-1234-1234-123456789abc.pdf";
     private final MockMultipartFile pdf = new MockMultipartFile("file", "report.pdf", "application/pdf", "%PDF-test".getBytes());
 
-    @Test void localStorageRetainsFilesAndRejectsTraversal() throws Exception {
-        var storage = new ReportStorage(directory.toString(), "", "", "reports");
-        storage.save(NAME, pdf);
-        assertArrayEquals(pdf.getBytes(), storage.read(NAME).getContentAsByteArray());
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"pdf", "zip"})
+    void localStorageRetainsFilesAndRejectsTraversal(String extension) throws Exception {
+        String name = NAME.replace(".pdf", "." + extension);
+        var storage = new ReportStorage(directory.resolve("uploads/reports").toString(), "", "", "reports", false);
+        storage.save(name, pdf);
+        var reopened = new ReportStorage(directory.resolve("uploads/reports").toString(), "", "", "reports", false);
+        assertArrayEquals(pdf.getBytes(), reopened.read(name).getContentAsByteArray());
         assertThrows(ResourceNotFoundException.class, () -> storage.read("../secret.pdf"));
-        storage.delete(NAME);
-        assertThrows(ResourceNotFoundException.class, () -> storage.read(NAME));
+        storage.delete(name);
+        assertThrows(ResourceNotFoundException.class, () -> storage.read(name));
     }
 
     @org.junit.jupiter.params.ParameterizedTest
@@ -48,7 +52,7 @@ class ReportStorageTest {
         });
         server.start();
         try {
-            var storage = new ReportStorage(directory.toString(), "http://127.0.0.1:" + server.getAddress().getPort(), "test-key", "reports");
+            var storage = new ReportStorage(directory.toString(), "http://127.0.0.1:" + server.getAddress().getPort(), "test-key", "reports", true);
             storage.save(name, pdf);
             assertArrayEquals(pdf.getBytes(), storage.read(name).getContentAsByteArray());
             assertEquals("application/" + extension, contentType.get());
@@ -56,5 +60,14 @@ class ReportStorageTest {
             storage.delete(name);
             assertThrows(BusinessRuleException.class, () -> storage.read(name));
         } finally { server.stop(0); }
+    }
+
+    @Test void hostedStorageRejectsMissingCredentials() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReportStorage(directory.toString(), "", "", "reports", true));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReportStorage(directory.toString(), "https://example.supabase.co", " ", "reports", true));
+        assertThrows(IllegalArgumentException.class,
+                () -> new ReportStorage(directory.toString(), "", "test-key", "reports", false));
     }
 }
