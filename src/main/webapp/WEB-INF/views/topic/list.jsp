@@ -59,19 +59,22 @@
                         <button type="submit" class="button">Gửi duyệt</button>
                     </form>
                 </c:if>
-                <c:if test="${(pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')) and t.status == 'PENDING'}">
+                <c:if test="${(pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')) and empty t.proposedGroupId and t.status == 'PENDING'}">
                     <form action="<c:url value='/topics/${t.id}/approve'/>" method="post" class="inline-form">
                         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                         <button type="submit" class="button">Duyệt</button>
                     </form>
                 </c:if>
-                <c:if test="${(pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')) and t.status == 'APPROVED'}">
+                <c:if test="${(pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')) and empty t.proposedGroupId and t.status == 'APPROVED'}">
                     <form action="<c:url value='/topics/${t.id}/publish'/>" method="post" class="inline-form">
                         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">
                         <button type="submit" class="button">Công bố</button>
                     </form>
                 </c:if>
                 <a class="button" href="<c:url value='/topics/${t.id}'/>">Chi tiết</a>
+                <c:if test="${(pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')) and not empty t.proposedGroupId and t.status == 'PENDING'}">
+                    <a class="button" href="<c:url value='/dean/group-topic-registrations'/>">Xét duyệt đề xuất nhóm</a>
+                </c:if>
             </td>
         </tr>
     </c:forEach>

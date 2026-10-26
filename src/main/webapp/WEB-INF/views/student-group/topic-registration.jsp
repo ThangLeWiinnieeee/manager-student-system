@@ -63,6 +63,9 @@
             <strong>Trạng thái:</strong>
             <c:out value="${registration.status.displayName}"/>
         </p>
+        <p><strong>Nội dung:</strong> <c:out value="${registration.topic.description}"/></p>
+        <c:if test="${registration.status == 'PENDING'}"><p>Đề xuất đang chờ khoa xét duyệt.</p></c:if>
+        <c:if test="${registration.status == 'APPROVED'}"><p>Nhóm đã nhận đề tài. Hãy thực hiện đề tài và nộp báo cáo theo hướng dẫn.</p></c:if>
 
         <c:if test="${not empty registration.rejectionReason}">
 
@@ -79,7 +82,11 @@
 
 
 <p>Môn/lớp: <strong><c:out value="${round.courseLabel}"/></strong> · Tối đa ${round.maxMembers} thành viên/nhóm · <c:out value="${round.registrationMode.displayName}"/></p>
-<c:if test="${round.registrationMode == 'SELF_PROPOSED' and isLeader and (empty registration or registration.status == 'REJECTED')}">
+<c:if test="${not registrationOpen}">
+    <p class="alert">Hiện không trong thời gian sinh viên đăng ký. Thời gian đăng ký: <c:out value="${round.svStartText}"/> – <c:out value="${round.svEndText}"/>.</p>
+</c:if>
+<c:if test="${round.registrationMode == 'SELF_PROPOSED' and not isLeader and empty registration}"><p>Chỉ nhóm trưởng có thể gửi đề xuất đề tài cho nhóm.</p></c:if>
+<c:if test="${round.registrationMode == 'SELF_PROPOSED' and registrationOpen and isLeader and (empty registration or registration.status == 'REJECTED')}">
     <form:form modelAttribute="proposalForm" method="post" action="${pageContext.request.contextPath}/student/my-groups/${group.id}/topics/propose" cssClass="form-card">
         <h2>Đề xuất đề tài của nhóm</h2>
         <p>Các nhóm được phép trùng tên đề tài; báo cáo và điểm được quản lý riêng.</p>
@@ -139,7 +146,7 @@
 
                         <td class="actions">
 
-                            <c:if test="${isLeader and
+                            <c:if test="${registrationOpen and isLeader and
                                 (empty registration or
                                  registration.status == 'REJECTED')}">
 

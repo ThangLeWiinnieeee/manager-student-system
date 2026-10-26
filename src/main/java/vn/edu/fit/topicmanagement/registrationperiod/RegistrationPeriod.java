@@ -21,6 +21,13 @@ public class RegistrationPeriod {
     @Column(name = "sv_end", nullable = false) private LocalDateTime svEnd;
     @Column(name = "gvpb_deadline") private LocalDateTime gvpbDeadline;
     @Column(name = "council_report_date") private LocalDateTime councilReportDate;
+    @Column(name = "gv_notice_sent", nullable = false) private boolean gvNoticeSent;
+    @Column(name = "sv_notice_sent", nullable = false) private boolean svNoticeSent;
+
+    public boolean isGvNoticeSent() { return gvNoticeSent; }
+    public void setGvNoticeSent(boolean value) { gvNoticeSent = value; }
+    public boolean isSvNoticeSent() { return svNoticeSent; }
+    public void setSvNoticeSent(boolean value) { svNoticeSent = value; }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -40,14 +47,14 @@ public class RegistrationPeriod {
     public void setGvpbDeadline(LocalDateTime value) { gvpbDeadline = value; }
     public LocalDateTime getCouncilReportDate() { return councilReportDate; }
     public void setCouncilReportDate(LocalDateTime value) { councilReportDate = value; }
-    public boolean isGvWindowOpen(LocalDateTime now) { return !now.isBefore(gvStart) && !now.isAfter(gvEnd); }
+    public boolean isGvWindowOpen(LocalDateTime now) { return !now.isBefore(gvStart) && now.isBefore(gvEnd); }
     public boolean isSvWindowOpen(LocalDateTime now) { return !now.isBefore(svStart) && !now.isAfter(svEnd); }
     public boolean isGvOpen() { return isGvWindowOpen(LocalDateTime.now()); }
     public boolean isEnded() { return LocalDateTime.now().isAfter(svEnd); }
     public String getStage() {
         LocalDateTime now = LocalDateTime.now();
         if (now.isBefore(gvStart)) return "Sắp mở";
-        if (!now.isAfter(gvEnd)) return "GV đang đăng ký";
+        if (isGvWindowOpen(now)) return "GV đang đăng ký";
         if (now.isBefore(svStart)) return "Chờ giai đoạn SV";
         return !now.isAfter(svEnd) ? "SV đang đăng ký" : "Đã kết thúc";
     }

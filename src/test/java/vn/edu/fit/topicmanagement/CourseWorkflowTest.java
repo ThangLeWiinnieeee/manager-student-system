@@ -169,6 +169,33 @@ class CourseWorkflowTest {
         assertEquals(1, periodRepository.findByPeriod_IdOrderByCourseNameAsc(window.getId()).size());
     }
 
+    @Test
+    void academicActivitiesAutomaticallyNameCoursesWhileSubjectsRequireNames() {
+        for (var type : RoundType.values()) {
+            login(dean);
+            var schedule = openWindowForm();
+            schedule.setType(type);
+            if (type.requiresGvpbDeadline()) schedule.setGvpbDeadline(schedule.getSvEnd().plusDays(1));
+            if (type.requiresCouncilReportDate()) schedule.setCouncilReportDate(schedule.getSvEnd().plusDays(2));
+            var window = windowService.create(schedule);
+            login(teacher);
+            var form = courseForm(window.getId(), "AUTO", 3);
+            form.setCourseName(null);
+            if (type == RoundType.MON_HOC) {
+                assertThrows(BusinessRuleException.class, () -> periods.create(form));
+                form.setCourseName("Web programming");
+                assertEquals("Web programming", periods.create(form).getCourseName());
+            } else {
+                var course = periods.create(form);
+                assertEquals(type.getDisplayName(), course.getCourseName());
+                form.setCourseName("Client supplied name");
+                assertEquals(type.getDisplayName(), periods.update(course.getId(), form).getCourseName());
+                form.setCourseName(null);
+                assertThrows(BusinessRuleException.class, () -> periods.create(form));
+            }
+        }
+    }
+
     RegistrationPeriodForm openWindowForm() {
         var form = new RegistrationPeriodForm();
         form.setType(RoundType.MON_HOC);
@@ -287,6 +314,49 @@ class CourseWorkflowTest {
         assertEquals(TopicStatus.APPROVED, topics.findById(ra.getTopic().getId()).orElseThrow().getStatus());
         assertEquals(TopicStatus.REJECTED, topics.findById(rb.getTopic().getId()).orElseThrow().getStatus());
         assertThrows(BusinessRuleException.class, () -> topicService.publish(ra.getTopic().getId()));
+    }
+
+    @Test
+    void proposalPagesFollowReviewStatusAndStudentWindow() {
+        var course = round(RegistrationMode.SELF_PROPOSED, 3);
+        var group = group(first, course);
+        String path = "/student/my-groups/" + group.getId() + "/topics";
+        var createPage = requestAs(teacher, "/topics/new", null);
+        assertEquals(200, createPage.statusCode());
+        var courseOptions = java.util.regex.Pattern.compile("(?s)<select[^>]*id=\"roundId\"[^>]*>(.*?)</select>")
+                .matcher(createPage.body());
+        assertTrue(courseOptions.find());
+        assertFalse(courseOptions.group(1).contains("value=\"" + course.getId() + "\""));
+        var proposal = new ProposalForm();
+        proposal.setTitle("Proposal lifecycle check");
+        proposal.setDescription("Original proposal content");
+        login(first);
+        var registration = registrations.propose(group.getId(), proposal);
+        var pending = requestAs(first, path, null);
+        assertEquals(200, pending.statusCode());
+        assertFalse(pending.body().contains("id=\"proposalForm\""));
+        assertTrue(pending.body().contains("Đề xuất đang chờ khoa xét duyệt"));
+        var list = requestAs(dean, "/topics/" + registration.getTopic().getId(), null);
+        assertEquals(200, list.statusCode());
+        assertFalse(list.body().contains("/topics/" + registration.getTopic().getId() + "/approve"));
+        assertTrue(list.body().contains("Xét duyệt đề xuất của nhóm"));
+        login(dean);
+        registrations.reject(registration.getId(), "Clarify scope");
+        var rejected = requestAs(first, path, null);
+        assertEquals(200, rejected.statusCode());
+        assertTrue(rejected.body().contains("value=\"Proposal lifecycle check\""));
+        assertTrue(rejected.body().contains("Original proposal content</textarea>"));
+        var invalid = requestAs(first, path + "/propose", java.util.Map.of("title", "Revised title", "description", ""));
+        assertEquals(200, invalid.statusCode());
+        assertTrue(invalid.body().contains("value=\"Revised title\""));
+        course.getPeriod().setSvEnd(LocalDateTime.now().minusMinutes(1));
+        windows.save(course.getPeriod());
+        var closed = requestAs(first, path, null);
+        assertEquals(200, closed.statusCode());
+        assertFalse(closed.body().contains("id=\"proposalForm\""));
+        assertTrue(closed.body().contains("Hiện không trong thời gian sinh viên đăng ký"));
+        login(first);
+        assertThrows(BusinessRuleException.class, () -> registrations.propose(group.getId(), proposal));
     }
 
     @Test

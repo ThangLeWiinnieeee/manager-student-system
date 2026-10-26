@@ -13,8 +13,8 @@
       <c:out value="${notification.title}" />
     </h1>
     <p>
-      Đối tượng: <span class="badge ${notification.targetRole == 'ALL' ? 'active' : 'info'}"><c:out value="${notification.targetRole.displayName}" /></span>
-      · Người đăng: <strong><c:out value="${notification.createdBy.fullName}" /></strong>
+      Đối tượng: <span class="badge ${notification.targetRole == 'ALL' ? 'active' : 'info'}"><c:out value="${notification.targetLabel}" /></span>
+      · Người đăng: <strong><c:out value="${notification.creatorName}" /></strong>
       · Thời gian: <c:out value="${notification.createdAtText}" />
     </p>
   </div>

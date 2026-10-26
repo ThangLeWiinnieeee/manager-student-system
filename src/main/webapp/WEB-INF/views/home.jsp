@@ -5,16 +5,17 @@
 <div class="page-heading">
     <div><h1>Tổng quan</h1><p>Xin chào <c:out value="${fullName}"/>, đây là không gian làm việc của bạn.</p></div>
 </div>
+<%@ include file="notification/registration-notices.jsp" %>
 <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')}">
 <div class="stats" aria-label="Tổng quan hệ thống">
     <section><span>Tài khoản</span><div class="stat-icon"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 5a3 3 0 0 1 0 6m2 3a5 5 0 0 1 3 5v2"/></svg></div><strong><c:out value="${userCount}"/></strong><small>Người dùng trong hệ thống</small></section>
     <section><span>Bộ môn</span><div class="stat-icon"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V5l8-3 8 3v16H4M9 21v-5h6v5M8 8h1m6 0h1M8 12h1m6 0h1"/></svg></div><strong><c:out value="${departmentCount}"/></strong><small>Hướng đào tạo của sinh viên</small></section>
-    <section><span>Đề tài</span><div class="stat-icon"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h6l3 3h9v13H3z"/><path d="M3 10h18"/></svg></div><strong aria-label="Chưa có dữ liệu">—</strong><small>Chưa mở chức năng đăng ký</small></section>
+    <section><span>Đề tài</span><div class="stat-icon"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V4h6l3 3h9v13H3z"/><path d="M3 10h18"/></svg></div><strong aria-label="Chưa có dữ liệu">—</strong><small>Theo lịch đợt đăng ký</small></section>
 </div>
 </c:if>
 <div class="dashboard-grid">
     <section class="panel">
-        <div class="panel-heading"><h2>Không gian đề tài</h2><span class="neutral-badge">Chưa mở đăng ký</span></div>
+        <div class="panel-heading"><h2>Không gian đề tài</h2></div>
         <div class="topic-empty">
             <svg viewBox="0 0 180 128" fill="none" aria-hidden="true">
                 <ellipse cx="90" cy="112" rx="68" ry="8" fill="#f0f0f9"/>
@@ -28,7 +29,7 @@
                 <path d="M26 37h8m-4-4v8m122 9h6m-3-3v6" stroke="#b9b5e3" stroke-width="2" stroke-linecap="round"/>
             </svg>
             <h3>Sẵn sàng cho những đề tài mới</h3>
-            <p>Chức năng đăng ký đề tài chưa được mở. Trong thời gian này, hãy kiểm tra thông tin hồ sơ để chuẩn bị cho đợt đăng ký.</p>
+            <p>Theo dõi thông báo mở đăng ký và kiểm tra thông tin hồ sơ để chuẩn bị cho đợt đăng ký.</p>
         </div>
     </section>
     <section class="panel">

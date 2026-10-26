@@ -215,8 +215,18 @@ public class StudentMyGroupController {
             Model model) {
 
         StudentGroup group = groups.getMyGroup(id);
-        model.addAttribute("round", periods.get(group.getRoundId()));
-        if (!model.containsAttribute("proposalForm")) model.addAttribute("proposalForm", new ProposalForm());
+        var round = periods.get(group.getRoundId());
+        model.addAttribute("round", round);
+        model.addAttribute("registrationOpen", round.isSvWindowOpen(java.time.LocalDateTime.now()));
+        var registration = registrations.findMyRegistration(id);
+        if (!model.containsAttribute("proposalForm")) {
+            var form = new ProposalForm();
+            if (registration != null && registration.getStatus() == GroupTopicRegistrationStatus.REJECTED) {
+                form.setTitle(registration.getTopic().getTitle());
+                form.setDescription(registration.getTopic().getDescription());
+            }
+            model.addAttribute("proposalForm", form);
+        }
 
         model.addAttribute("group", group);
 
@@ -230,7 +240,7 @@ public class StudentMyGroupController {
 
         model.addAttribute(
                 "registration",
-                registrations.findMyRegistration(id));
+                registration);
 
         return "student-group/topic-registration";
     }
