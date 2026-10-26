@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,11 +31,11 @@ public class PasswordRecoveryService {
     private static final String INVALID = "Mã không hợp lệ, đã hết hạn hoặc đã bị thay thế. Vui lòng yêu cầu mã mới nếu cần.";
     private final JdbcTemplate db;
     private final PasswordEncoder encoder;
-    private final JavaMailSender mail;
+    private final RecoveryMailSender mail;
     private final String from;
 
     public PasswordRecoveryService(JdbcTemplate db, PasswordEncoder encoder,
-            JavaMailSender mail, @Value("${app.mail.from:}") String from) {
+            RecoveryMailSender mail, @Value("${app.mail.from:}") String from) {
         this.db = db;
         this.encoder = encoder;
         this.mail = mail;
@@ -88,11 +87,11 @@ public class PasswordRecoveryService {
         message.setSubject("Mã xác minh đặt lại mật khẩu - Quản lý đề tài");
         message.setText("Mã OTP của bạn: " + otp + "\nMã có hiệu lực 5 phút. Không chia sẻ mã này với bất kỳ ai."
                 + "\nNếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.");
-        // shortcut: synchronous SMTP holds the transaction; use an outbox if mail volume grows.
+        // shortcut: synchronous delivery holds the transaction; use an outbox if mail volume grows.
         try {
             mail.send(message);
         } catch (MailException ex) {
-            // SMTP can accept a message before timing out. Invalidate that uncertain code.
+            // The provider can accept a message before timing out. Invalidate that uncertain code.
             db.update("UPDATE password_recovery SET otp_hash = NULL WHERE user_id = ?", account.id());
             LOG.warn("Password recovery email could not be confirmed ({}).", ex.getClass().getSimpleName());
         }

@@ -8,7 +8,7 @@
 2. Với danh sách có sẵn, GV tạo đề tài có nội dung và 1–2 GVHD; Trưởng khoa duyệt và công bố. Với hình thức tự đề xuất, SV nhập tên/nội dung thay vì chọn một đề tài có tên trống.
 3. GV chia sẻ **mã tham gia lớp đề tài** tại trang chi tiết môn/lớp. Trong giai đoạn SV, sinh viên nhập mã ở **Nhóm của tôi**, sau đó tạo nhóm hoặc nhận lời mời và tự xác nhận vào nhóm. Chỉ SV đã tham gia cùng lớp mới được mời vào nhóm; đây không phải đăng ký học phần. Mỗi SV chỉ thuộc **một nhóm trong cùng môn/lớp của đợt**; được tham gia nhóm ở các lớp khác trong cùng đợt hoặc ở đợt khác.
 4. Nhóm trưởng chọn đề tài. `EXCLUSIVE`: nhận ngay và ẩn khỏi danh sách chọn của nhóm khác; yêu cầu đồng thời chỉ có một nhóm thắng. `SHARED`: nhiều nhóm cùng nhận một đề tài. `SELF_PROPOSED`: tên trùng được phép, mỗi nhóm có đề xuất riêng chờ Khoa duyệt nội dung.
-5. Nhóm trưởng nộp PDF; Khoa phân công chấm **riêng từng nhóm**. Sau khi có phiếu chấm, báo cáo và người chấm bị khóa. KLTN được bổ sung hội đồng sau khi GVPB đã đồng ý bảo vệ.
+5. Nhóm trưởng nộp ZIP (tối đa 10 MB); Khoa phân công chấm **riêng từng nhóm**. Sau khi có phiếu chấm, báo cáo và người chấm bị khóa. KLTN được bổ sung hội đồng sau khi GVPB đã đồng ý bảo vệ.
 6. Chấm và công bố theo loại:
 
 | Loại | Trình tự và điểm cuối |
@@ -38,6 +38,28 @@ Hội đồng có 3–5 GV, đúng một chủ tịch và một thư ký. GVHD c
 - Có thể thay người chấm đang có phiếu nháp: bản nháp cũ được giữ dưới người cũ, không tính vào điểm hiện hành và không chuyển cho GV mới. Không thay người đã nộp điểm hoặc nhóm đã chốt kết quả. Người từng có phiếu chấm của nhóm không được nhận lại nhiệm vụ qua luồng này. GVHD của đề tài dùng chung có nhóm đã chốt không được đổi để bảo toàn hồ sơ lịch sử.
 - Thay thành viên hội đồng áp dụng riêng nhóm được chọn: sao chép hội đồng với cùng vai trò, lịch và địa điểm, chỉ đổi người chưa nộp điểm. Các nhóm khác và điểm của các thành viên còn lại giữ nguyên. Lịch sử ghi người bàn giao, người cũ/mới, lý do và thời gian.
 - V19 chỉ thêm bảng lời mời và lịch sử; thành viên hiện hữu không phải xác nhận lại. Khởi động lại ứng dụng để Flyway áp dụng migration; không cần chạy lại seed.
+
+### Lưu tệp báo cáo
+
+Khi chạy bằng `run.ps1`, tệp được lưu mặc định tại `uploads/reports` trong project
+(đã được Git bỏ qua). Có thể đặt `REPORT_STORAGE_DIR` trong `.env` thành đường dẫn
+tuyệt đối tới thư mục có quyền ghi. Nếu trước đây đã lưu tệp ở
+`${user.home}/student-topic-reports`, đặt biến này trỏ về thư mục cũ hoặc sao chép
+các tệp sang thư mục mới, giữ nguyên tên UUID để tải được báo cáo cũ.
+Khi cấu hình Supabase Storage, bucket phải cho phép `application/zip` (và
+`application/pdf` nếu còn báo cáo cũ), dung lượng tối thiểu 10 MB.
+
+**Local:** chạy `./run.ps1`; để trống `SUPABASE_URL` và
+`SUPABASE_SERVICE_ROLE_KEY` nếu muốn lưu trên máy. Điền cả hai biến nếu muốn local
+cũng dùng bucket trên cloud.
+
+**Render:** dùng `render.yaml` (profile `render`) và cấu hình `DB_URL`,
+`DB_USERNAME`, `DB_PASSWORD`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+`SUPABASE_STORAGE_BUCKET=reports` trên host. Profile này yêu cầu Supabase để tránh
+lưu báo cáo vào ổ đĩa tạm. Xem [hướng dẫn deploy](docs/DEPLOY_RENDER.md).
+Host có ổ đĩa bền vững cũng có thể chạy không dùng profile `render` và đặt
+`REPORT_STORAGE_DIR` trỏ đến ổ đĩa được gắn, có quyền ghi.
+Nếu local và host dùng chung database, cần dùng chung bucket để cùng tải được báo cáo.
 
 ### URL chính
 

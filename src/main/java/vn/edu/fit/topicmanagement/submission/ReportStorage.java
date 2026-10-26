@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
@@ -21,14 +23,22 @@ import vn.edu.fit.topicmanagement.common.exception.ResourceNotFoundException;
 /** Storage only; callers must check group access before reading a report. */
 @Component
 public class ReportStorage {
+    private static final Logger log = LoggerFactory.getLogger(ReportStorage.class);
     private final Path root;
     private final RestClient remote;
 
     public ReportStorage(@Value("${app.submission.storage-dir}") String directory,
             @Value("${SUPABASE_URL:}") String url,
             @Value("${SUPABASE_SERVICE_ROLE_KEY:}") String key,
-            @Value("${SUPABASE_STORAGE_BUCKET:reports}") String bucket) {
+            @Value("${SUPABASE_STORAGE_BUCKET:reports}") String bucket,
+            @Value("${app.submission.require-remote:false}") boolean requireRemote) {
+        url = url.trim();
+        key = key.trim();
+        bucket = bucket.trim();
         root = Path.of(directory).toAbsolutePath().normalize();
+        if (requireRemote && (url.isBlank() || key.isBlank())) {
+            throw new IllegalArgumentException("Hosted reports require SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY");
+        }
         if (url.isBlank() != key.isBlank()) {
             throw new IllegalArgumentException("Configure both Supabase URL and service-role key");
         }
@@ -39,6 +49,8 @@ public class ReportStorage {
         remote = url.isBlank() ? null : RestClient.builder().requestFactory(factory)
                 .baseUrl(url.replaceAll("/+$", "") + "/storage/v1/object/" + bucket)
                 .defaultHeader("apikey", key).defaultHeader("Authorization", "Bearer " + key).build();
+        if (remote == null) log.info("Report storage: local directory {}", root);
+        else log.info("Report storage: Supabase bucket {}", bucket);
     }
 
     public void save(String name, MultipartFile file) {
@@ -53,6 +65,8 @@ public class ReportStorage {
                         .body(file.getBytes()).retrieve().toBodilessEntity();
             }
         } catch (IOException | RestClientException ex) {
+            if (remote == null) log.error("Cannot save report to {}", path, ex);
+            else log.error("Cannot save report to remote storage ({})", ex.getClass().getSimpleName());
             throw new BusinessRuleException("Không thể lưu tệp báo cáo. Vui lòng thử lại.");
         }
     }

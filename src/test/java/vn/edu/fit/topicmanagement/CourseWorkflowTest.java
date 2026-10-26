@@ -1183,6 +1183,9 @@ class CourseWorkflowTest {
         assertThrows(BusinessRuleException.class, () -> submissions.upload(group.getId(),
                 new MockMultipartFile("file", "old.pdf", "application/pdf", "%PDF-test".getBytes())));
         var report = submissions.upload(group.getId(), zip);
+        course.getPeriod().setSvEnd(LocalDateTime.now().minusMinutes(1));
+        windows.save(course.getPeriod());
+        assertPageAs(first, "/student/my-groups/" + group.getId() + "/submissions", "report.zip");
         assertEquals("application/zip", report.getContentType());
         login(teacher);
         assertArrayEquals(zip.getBytes(), reports.download(group.getId(), report.getId()).resource().getContentAsByteArray());

@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+.build-tools
+target
+uploads
+*.log
+*.docx
+.idea
+.vscode

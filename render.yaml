@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: manager-student-system
+    runtime: docker
+    plan: free
+    healthCheckPath: /login
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: render
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xms64m -Xmx256m -XX:MaxMetaspaceSize=160m -XX:+ExitOnOutOfMemoryError
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: reports
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
