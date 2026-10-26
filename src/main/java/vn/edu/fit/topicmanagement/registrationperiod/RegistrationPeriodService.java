@@ -75,7 +75,7 @@ public class RegistrationPeriodService {
         } else if (!form.getSvStart().isBefore(form.getSvEnd())) {
             error = "Thời gian bắt đầu đăng ký của sinh viên phải trước thời gian kết thúc";
         } else if (form.getSvStart().isBefore(form.getGvEnd())) {
-            error = "Giai đoạn sinh viên phải bắt đầu sau khi giai đoạn giảng viên kết thúc (hai giai đoạn riêng biệt)";
+            error = "Giai đoạn sinh viên phải bắt đầu từ thời điểm giảng viên kết thúc đăng ký trở đi";
         } else if (form.getType().requiresGvpbDeadline() && form.getGvpbDeadline() == null) {
             error = "Hạn GVPB nộp điểm là bắt buộc với đợt " + form.getType().getDisplayName();
         } else if (!form.getType().requiresGvpbDeadline() && form.getGvpbDeadline() != null) {

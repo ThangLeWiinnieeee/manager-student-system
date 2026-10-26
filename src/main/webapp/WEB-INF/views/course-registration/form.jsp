@@ -13,11 +13,11 @@
     <p class="form-intro">Chọn hình thức đề tài và giới hạn từ 1 đến 5 sinh viên mỗi nhóm.</p>
     <form:errors path="*" cssClass="alert error" element="div"/>
     <c:choose>
-        <c:when test="${editing}"><p>Đợt chung: <c:out value="${window.name}"/> (#<c:out value="${window.id}"/>)</p><form:hidden path="periodId"/></c:when>
+        <c:when test="${editing}"><p>Đợt chung: <c:out value="${window.name}"/> (#<c:out value="${window.id}"/>)</p><form:hidden path="periodId" data-course-name="${window.type == 'MON_HOC' ? '' : window.type.displayName}"/></c:when>
         <c:otherwise>
             <form:label path="periodId">Đợt đang mở cho giảng viên</form:label>
             <form:select path="periodId" required="required"><form:option value="" label="-- Chọn đợt --"/>
-                <c:forEach items="${windows}" var="w"><form:option value="${w.id}"><c:out value="${w.name}"/> (#<c:out value="${w.id}"/>)</form:option></c:forEach>
+                <c:forEach items="${windows}" var="w"><form:option value="${w.id}" data-course-name="${w.type == 'MON_HOC' ? '' : w.type.displayName}"><c:out value="${w.name}"/> (#<c:out value="${w.id}"/>)</form:option></c:forEach>
             </form:select>
             <c:if test="${empty windows}"><p>Hiện chưa có đợt nào mở cho giảng viên đăng ký.</p></c:if>
         </c:otherwise>
@@ -33,4 +33,5 @@
     </div>
     <div class="form-actions"><button class="primary" type="submit">Lưu môn/lớp</button><a class="button" href="<c:url value='/course-registrations'/>">Hủy</a></div>
 </form:form>
+<script src="<c:url value='/js/course-registration.js'/>"></script>
 <%@ include file="../common/footer.jsp" %>

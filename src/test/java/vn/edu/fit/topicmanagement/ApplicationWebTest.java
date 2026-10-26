@@ -338,6 +338,41 @@ class ApplicationWebTest {
         assertPage(submit(windowPath + "/edit", windowPath, schedule), "Hạn GVPB nộp điểm là bắt buộc");
     }
 
+    @ParameterizedTest
+    @EnumSource(Role.class)
+    void registrationNoticesAreVisibleOnlyToTheCurrentPhaseAudience(Role role) throws Exception {
+        var account = new UserCreateForm();
+        account.setFullName("Notice user");
+        account.setEmail("notice-" + java.util.UUID.randomUUID() + "@example.test");
+        account.setPassword("NoticePassword123!");
+        account.setRole(role);
+        accounts.create(account);
+        var now = java.time.LocalDateTime.now();
+        var lecturer = new vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod();
+        lecturer.setName("NOTICE-GV-" + role);
+        lecturer.setType(vn.edu.fit.topicmanagement.registrationperiod.RoundType.MON_HOC);
+        lecturer.setGvStart(now.minusDays(1)); lecturer.setGvEnd(now.plusDays(1));
+        lecturer.setSvStart(now.plusDays(1)); lecturer.setSvEnd(now.plusDays(2));
+        var student = new vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod();
+        student.setName("NOTICE-SV-" + role);
+        student.setType(vn.edu.fit.topicmanagement.registrationperiod.RoundType.MON_HOC);
+        student.setGvStart(now.minusDays(2)); student.setGvEnd(now.minusDays(1));
+        student.setSvStart(now.minusDays(1)); student.setSvEnd(now.plusDays(1));
+        windows.saveAll(java.util.List.of(lecturer, student));
+        try {
+            login(account.getEmail(), account.getPassword());
+            for (String path : new String[]{"/", "/notifications"}) {
+                var response = get(path);
+                assertEquals(200, response.statusCode(), response.body());
+                assertEquals(role == Role.LECTURER || role == Role.DEAN, response.body().contains(lecturer.getName()));
+                assertEquals(role == Role.STUDENT, response.body().contains(student.getName()));
+                if (role != Role.ADMIN) assertPage(response, path.equals("/") ? "Thông báo mở đăng ký" : "Hệ thống");
+            }
+        } finally {
+            windows.deleteAll(java.util.List.of(lecturer, student));
+        }
+    }
+
     private void login(String email, String password) throws Exception {
         HttpResponse<String> response = submit("/login", "/login", Map.of("email", email, "password", password));
         assertEquals("/", response.uri().getPath(), response.body());

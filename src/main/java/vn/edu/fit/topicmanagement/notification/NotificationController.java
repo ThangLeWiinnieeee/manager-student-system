@@ -12,13 +12,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class NotificationController {
 
     private final NotificationService notifications;
+    private final RegistrationNoticeService registrationNotices;
 
-    public NotificationController(NotificationService notifications) {
+    public NotificationController(NotificationService notifications, RegistrationNoticeService registrationNotices) {
         this.notifications = notifications;
+        this.registrationNotices = registrationNotices;
     }
 
     @GetMapping
     public String list(Principal principal, Model model) {
+        registrationNotices.publishOpenPeriods();
         model.addAttribute("notifications", notifications.findVisibleForUser(principal.getName()));
         return "notification/list";
     }

@@ -32,10 +32,10 @@
           </td>
           <td>
             <span class="badge ${n.targetRole == 'ALL' ? 'active' : (n.targetRole == 'LECTURER' ? 'info' : 'warn')}">
-              <c:out value="${n.targetRole.displayName}" />
+              <c:out value="${n.targetLabel}" />
             </span>
           </td>
-          <td><c:out value="${n.createdBy.fullName}" /></td>
+          <td><c:out value="${n.creatorName}" /></td>
           <td><c:out value="${n.createdAtText}" /></td>
           <td>
             <span class="badge ${n.published ? 'active' : 'inactive'}">

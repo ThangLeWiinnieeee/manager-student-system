@@ -26,7 +26,8 @@ public class NotificationService {
     public List<Notification> findVisibleForUser(String email) {
         UserAccount user = users.getByEmail(email);
         if (user.getRole() == Role.ADMIN || user.getRole() == Role.DEAN) {
-            return notifications.findAllPublished();
+            return notifications.findAllPublished().stream()
+                    .filter(notification -> notification.isAutomaticRecipient(user.getRole())).toList();
         } else if (user.getRole() == Role.LECTURER) {
             return notifications.findPublishedForRole(NotificationTarget.LECTURER);
         } else {
@@ -50,6 +51,9 @@ public class NotificationService {
     public Notification getVisible(Long id, String email) {
         Notification notification = get(id);
         UserAccount user = users.getByEmail(email);
+        if (!notification.isAutomaticRecipient(user.getRole())) {
+            throw new BusinessRuleException("Bạn không có quyền xem thông báo này");
+        }
         if (!notification.isPublished() && user.getRole() != Role.ADMIN && user.getRole() != Role.DEAN) {
             throw new ResourceNotFoundException("Thông báo không tồn tại hoặc đã bị ẩn");
         }
@@ -108,6 +112,9 @@ public class NotificationService {
     }
 
     private void apply(Notification notification, NotificationForm form) {
+        if (notification.isAutomatic() && notification.getTargetRole() != form.getTargetRole()) {
+            throw new BusinessRuleException("Không thể đổi đối tượng nhận thông báo mở đợt tự động");
+        }
         notification.setTitle(form.getTitle().trim());
         notification.setContent(form.getContent().trim());
         notification.setTargetRole(form.getTargetRole() == null ? NotificationTarget.ALL : form.getTargetRole());

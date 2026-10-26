@@ -12,6 +12,8 @@
 <form:form modelAttribute="topicForm" method="post" action="${formAction}" cssClass="form-card">
     <h2>Thông tin đề tài</h2>
     <p class="form-intro">Chọn “Gửi duyệt” để gửi khoa xét duyệt, hoặc “Lưu nháp” để tiếp tục chỉnh sửa sau.</p>
+    <p>Lớp có hình thức “Nhóm tự đề xuất đề tài” do nhóm trưởng sinh viên gửi đề xuất tại Nhóm của tôi; giảng viên không cần tạo đề tài trước.</p>
+    <c:if test="${empty topicPeriods}"><p class="alert">Bạn chưa có môn/lớp phù hợp để tạo đề tài.</p></c:if>
     <form:errors path="*" cssClass="alert error" element="div"/>
     <form:label path="title">Tên đề tài</form:label>
     <form:input path="title" maxlength="200" required="required"/>
@@ -24,7 +26,7 @@
             <form:label path="roundId">Môn/lớp đăng ký</form:label>
             <form:select path="roundId" required="required">
                 <form:option value="" label="-- Chọn môn/lớp đăng ký --"/>
-                <c:forEach items="${periods}" var="period">
+                <c:forEach items="${topicPeriods}" var="period">
                     <form:option value="${period.id}" label="${period.selectionLabel} - ${period.type.displayName}"/>
                 </c:forEach>
             </form:select>

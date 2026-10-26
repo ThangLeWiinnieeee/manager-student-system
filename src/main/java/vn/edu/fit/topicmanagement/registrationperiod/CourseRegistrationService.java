@@ -39,8 +39,10 @@ public class CourseRegistrationService {
 
     @org.springframework.security.access.prepost.PreAuthorize("hasRole('LECTURER')")
     public CourseRegistration create(CourseRegistrationForm form) {
-        validate(form);
+        if (form.getPeriodId() == null) throw new BusinessRuleException("Vui lòng chọn đợt đăng ký");
         var window = windows.lock(form.getPeriodId());
+        fillCourseName(form, window);
+        validate(form);
         if (!window.isGvOpen()) throw new BusinessRuleException("Ngoài thời gian giảng viên đăng ký môn/lớp");
         CourseRegistration period = new CourseRegistration();
         period.setPeriod(window);
@@ -53,6 +55,7 @@ public class CourseRegistrationService {
     public CourseRegistration update(Long id, CourseRegistrationForm form) {
         CourseRegistration period = lock(id);
         assertCanManage(period);
+        fillCourseName(form, period.getPeriod());
         validate(form);
         if (!isManager() && !period.isGvWindowOpen(LocalDateTime.now()))
             throw new BusinessRuleException("Ngoài thời gian giảng viên cập nhật đăng ký môn/lớp");
@@ -62,7 +65,7 @@ public class CourseRegistrationService {
         if ((periods.hasRelatedData(id) || participants.existsByCourse_Id(id))
                 && (period.getRegistrationMode() != form.getRegistrationMode()
                 || period.getMaxMembers() != form.getMaxMembers()
-                || (!"LEGACY".equals(period.getClassCode()) && (!java.util.Objects.equals(period.getCourseName(), form.getCourseName().trim())
+                || (!"LEGACY".equals(period.getClassCode()) && ((period.getType() == RoundType.MON_HOC && !java.util.Objects.equals(period.getCourseName(), form.getCourseName().trim()))
                     || !java.util.Objects.equals(period.getClassCode(), form.getClassCode().trim())))
                 || (period.getDepartment() != null && !java.util.Objects.equals(period.getDepartment().getId(), form.getDepartmentId()))
                 || (isManager() && period.getLecturer() != null && !java.util.Objects.equals(period.getLecturer().getId(), form.getLecturerId())))) {
@@ -119,6 +122,12 @@ public class CourseRegistrationService {
             throw new BusinessRuleException(
                     "Ngoài thời gian đăng ký đề tài của sinh viên (" + period.getSvStartText()
                             + " - " + period.getSvEndText() + ")");
+        }
+    }
+
+    private void fillCourseName(CourseRegistrationForm form, RegistrationPeriod window) {
+        if (window.getType() != RoundType.MON_HOC) {
+            form.setCourseName(window.getType().getDisplayName());
         }
     }
 

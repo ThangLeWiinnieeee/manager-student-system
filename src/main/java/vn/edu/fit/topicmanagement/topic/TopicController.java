@@ -49,6 +49,9 @@ public class TopicController {
     @ModelAttribute
     void referenceData(Model model) {
         model.addAttribute("periods", periods.findAll());
+        model.addAttribute("topicPeriods", periods.findManageable().stream()
+                .filter(period -> period.getRegistrationMode() != vn.edu.fit.topicmanagement.registrationperiod.RegistrationMode.SELF_PROPOSED)
+                .toList());
         model.addAttribute("departments", departments.findEnabled());
         model.addAttribute("lecturers", accounts.findAll().stream()
                 .filter(u -> u.getRole() == Role.LECTURER && u.isEnabled())

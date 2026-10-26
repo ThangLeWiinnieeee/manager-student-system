@@ -34,7 +34,10 @@ public class Notification {
     @Column(nullable = false)
     private boolean published = true;
 
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @Column(nullable = false)
+    private boolean automatic;
+
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "created_by_id")
     private UserAccount createdBy;
 
@@ -45,6 +48,19 @@ public class Notification {
     private Instant updatedAt;
 
     public Long getId() { return id; }
+    public boolean isAutomatic() { return automatic; }
+    public void setAutomatic(boolean automatic) { this.automatic = automatic; }
+    public String getCreatorName() { return createdBy == null ? "Hệ thống" : createdBy.getFullName(); }
+    public String getTargetLabel() {
+        return automatic && targetRole == NotificationTarget.LECTURER
+                ? "Giảng viên và trưởng khoa" : targetRole.getDisplayName();
+    }
+
+    public boolean isAutomaticRecipient(vn.edu.fit.topicmanagement.user.Role role) {
+        return !automatic || (targetRole == NotificationTarget.LECTURER
+                ? role == vn.edu.fit.topicmanagement.user.Role.LECTURER || role == vn.edu.fit.topicmanagement.user.Role.DEAN
+                : role == vn.edu.fit.topicmanagement.user.Role.STUDENT);
+    }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
     public String getContent() { return content; }

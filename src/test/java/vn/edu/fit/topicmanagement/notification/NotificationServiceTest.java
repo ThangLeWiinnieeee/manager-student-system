@@ -57,6 +57,25 @@ class NotificationServiceTest {
         assertEquals(admin, result.getCreatedBy());
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(Role.class)
+    void automaticNoticeDetailsEnforceRecipients(Role role) {
+        var user = new UserAccount();
+        user.setRole(role);
+        when(users.getByEmail("reader@test")).thenReturn(user);
+        var notice = new Notification();
+        notice.setAutomatic(true);
+        when(notifications.findById(1L)).thenReturn(Optional.of(notice));
+        for (var target : List.of(NotificationTarget.LECTURER, NotificationTarget.STUDENT)) {
+            notice.setTargetRole(target);
+            boolean allowed = target == NotificationTarget.LECTURER
+                    ? role == Role.LECTURER || role == Role.DEAN : role == Role.STUDENT;
+            if (allowed) assertSame(notice, service.getVisible(1L, "reader@test"));
+            else assertThrows(vn.edu.fit.topicmanagement.common.exception.BusinessRuleException.class,
+                    () -> service.getVisible(1L, "reader@test"));
+        }
+    }
+
     @Test
     void togglePublish_success() {
         Notification n = new Notification();

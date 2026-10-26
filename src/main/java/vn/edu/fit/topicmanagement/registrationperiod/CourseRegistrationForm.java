@@ -10,7 +10,6 @@ public class CourseRegistrationForm {
     public Long getPeriodId() { return periodId; }
     public void setPeriodId(Long value) { periodId = value; }
 
-    @NotBlank(message = "Vui lòng nhập môn học hoặc hoạt động")
     @Size(max = 150)
     private String courseName;
     @NotBlank(message = "Vui lòng nhập mã lớp hoặc mã đợt")

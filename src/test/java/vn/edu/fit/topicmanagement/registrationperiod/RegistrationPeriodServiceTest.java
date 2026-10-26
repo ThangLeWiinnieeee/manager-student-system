@@ -87,12 +87,26 @@ class RegistrationPeriodServiceTest {
     }
 
     @Test
-    void svWindowMustStartAfterGvWindowEnds() {
+    void svWindowMustNotOverlapGvWindow() {
         RegistrationPeriodForm form = validKltnForm();
         form.setSvStart(LocalDateTime.of(2026, 10, 15, 8, 0));
         RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
+    }
+
+    @Test
+    void svWindowCanStartExactlyWhenGvWindowEnds() {
+        var form = validKltnForm();
+        form.setSvStart(form.getGvEnd());
+        when(periods.save(any(RegistrationPeriod.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        var service = new RegistrationPeriodService(periods, courses);
+
+        var period = service.create(form);
+
+        assertEquals(period.getGvEnd(), period.getSvStart());
+        verify(periods).save(period);
     }
 
     @Test

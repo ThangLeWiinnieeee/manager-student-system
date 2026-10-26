@@ -37,12 +37,12 @@
           </a>
         </h2>
         <span class="badge ${roleBadge}">
-          <c:out value="${n.targetRole.displayName}" />
+          <c:out value="${n.targetLabel}" />
         </span>
       </div>
 
       <p style="color: #64748b; font-size: 0.875rem; margin: 0 0 12px 0;">
-        Đăng bởi: <strong><c:out value="${n.createdBy.fullName}" /></strong> · Ngày: <c:out value="${n.createdAtText}" />
+        Đăng bởi: <strong><c:out value="${n.creatorName}" /></strong> · Ngày: <c:out value="${n.createdAtText}" />
       </p>
 
       <div style="color: #334155; line-height: 1.6; white-space: pre-line; margin-bottom: 16px;">
