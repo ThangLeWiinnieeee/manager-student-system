@@ -142,10 +142,10 @@
 
 
             <%-- ========================================= --%>
-            <%-- MENU CHUNG CHO ADMIN VA DEAN            --%>
+            <%-- QUAN LY TAI KHOAN CHI DANH CHO ADMIN    --%>
             <%-- ========================================= --%>
 
-            <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')}">
+            <c:if test="${pageContext.request.isUserInRole('ADMIN')}">
 
 
                 <%-- ================================= --%>
@@ -170,15 +170,16 @@
 
                     Tài khoản
                 </a>
-
+            </c:if>
+            <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN')}">
 
                 <%-- ================================= --%>
                 <%-- 4. QUAN LY BO MON                 --%>
                 <%-- ================================= --%>
 
                 <a class="nav-link"
-                   href="<c:url value='/admin/majors'/>"
-                   aria-current="${fn:contains(currentPath, '/admin/majors') ? 'page' : 'false'}">
+                   href="<c:url value='/admin/departments'/>"
+                   aria-current="${fn:contains(currentPath, '/admin/departments') ? 'page' : 'false'}">
 
                     <svg class="nav-icon"
                          viewBox="0 0 24 24"
@@ -191,7 +192,7 @@
 
                     </svg>
 
-                    Chuyên ngành
+                    Bộ môn
                 </a>
 
 
@@ -225,6 +226,7 @@
                 <%-- 6. NHOM SINH VIEN - TV3            --%>
                 <%-- ================================= --%>
 
+                <c:if test="${pageContext.request.isUserInRole('ADMIN')}">
                 <a class="nav-link"
                    href="<c:url value='/admin/student-groups'/>"
                    aria-current="${fn:contains(currentPath, '/admin/student-groups') ? 'page' : 'false'}">
@@ -245,6 +247,7 @@
 
                     Nhóm sinh viên
                 </a>
+                </c:if>
 
 
                 <%-- ================================= --%>
@@ -252,7 +255,7 @@
                 <%-- ================================= --%>
 
                 <a class="nav-link"
-                   href="<c:url value='/admin/councils'/>"
+                   href="<c:url value='/admin/councils/assignments'/>"
                    aria-current="${fn:contains(currentPath, '/admin/councils') ? 'page' : 'false'}">
 
                     <svg class="nav-icon"
@@ -266,7 +269,7 @@
 
                     </svg>
 
-                    Hội đồng bảo vệ
+                    Phân công đánh giá
                 </a>
 
             </c:if>
@@ -479,6 +482,14 @@
                 Hồ sơ cá nhân
             </a>
 
+        <c:if test="${pageContext.request.isUserInRole('LECTURER')}">
+            <a class="nav-link" href="<c:url value='/admin/registration-periods'/>">Đợt môn/lớp phụ trách</a>
+        </c:if>
+            <c:if test="${pageContext.request.isUserInRole('ADMIN') or pageContext.request.isUserInRole('DEAN') or pageContext.request.isUserInRole('LECTURER')}">
+                <a class="nav-link" href="<c:url value='/course-registrations'/>" aria-current="${fn:contains(currentPath, '/course-registrations') ? 'page' : 'false'}">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h7l2 2h9v14H3z"/></svg>Môn/lớp đăng ký
+                </a>
+            </c:if>
         </nav>
 
 

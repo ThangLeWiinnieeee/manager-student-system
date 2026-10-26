@@ -42,11 +42,12 @@ public class EvaluationController {
         return "evaluation/lecturer-list";
     }
 
-    @GetMapping("/topic/{topicId}")
-    public String form(@PathVariable Long topicId, Principal principal, Model model) {
-        Topic topic = topics.get(topicId);
-        TopicAssignment assignment = councils.getAssignment(topicId);
-        Evaluation currentEval = evaluations.getMyEvaluation(topicId, principal.getName());
+    @GetMapping("/registration/{registrationId}")
+    public String form(@PathVariable Long registrationId, Principal principal, Model model) {
+        councils.assertCanViewAssessment(registrationId, principal.getName());
+        Topic topic = councils.getRegistration(registrationId).getTopic();
+        TopicAssignment assignment = councils.getAssignment(registrationId);
+        Evaluation currentEval = evaluations.getMyEvaluation(registrationId, principal.getName());
 
         EvaluationForm form = new EvaluationForm();
         if (currentEval != null) {
@@ -54,8 +55,10 @@ public class EvaluationController {
             form.setScorePresentation(currentEval.getScorePresentation());
             form.setScoreQa(currentEval.getScoreQa());
             form.setComments(currentEval.getComments());
+            form.setDefenseAllowed(currentEval.getDefenseAllowed());
         }
 
+        model.addAttribute("registration", councils.getRegistration(registrationId));
         model.addAttribute("topic", topic);
         model.addAttribute("assignment", assignment);
         model.addAttribute("currentEval", currentEval);
@@ -63,18 +66,20 @@ public class EvaluationController {
         return "evaluation/form";
     }
 
-    @PostMapping("/topic/{topicId}")
+    @PostMapping("/registration/{registrationId}")
     public String submit(
-            @PathVariable Long topicId,
+            @PathVariable Long registrationId,
             @Valid @ModelAttribute("evaluationForm") EvaluationForm form,
             BindingResult bindingResult,
             Principal principal,
             Model model,
             RedirectAttributes redirect) {
         if (bindingResult.hasErrors()) {
-            Topic topic = topics.get(topicId);
-            TopicAssignment assignment = councils.getAssignment(topicId);
-            Evaluation currentEval = evaluations.getMyEvaluation(topicId, principal.getName());
+            councils.assertCanViewAssessment(registrationId, principal.getName());
+            Topic topic = councils.getRegistration(registrationId).getTopic();
+            TopicAssignment assignment = councils.getAssignment(registrationId);
+            Evaluation currentEval = evaluations.getMyEvaluation(registrationId, principal.getName());
+            model.addAttribute("registration", councils.getRegistration(registrationId));
             model.addAttribute("topic", topic);
             model.addAttribute("assignment", assignment);
             model.addAttribute("currentEval", currentEval);
@@ -82,16 +87,18 @@ public class EvaluationController {
         }
 
         try {
-            evaluations.evaluate(topicId, form, principal.getName());
+            evaluations.evaluate(registrationId, form, principal.getName());
             String msg = "submit".equalsIgnoreCase(form.getAction())
                     ? "Đã xác nhận nộp điểm và khóa chỉnh sửa thành công"
                     : "Đã lưu nháp điểm đánh giá";
             redirect.addFlashAttribute("success", msg);
-            return "redirect:/lecturer/evaluations/topic/" + topicId;
+            return "redirect:/lecturer/evaluations/registration/" + registrationId;
         } catch (BusinessRuleException ex) {
-            Topic topic = topics.get(topicId);
-            TopicAssignment assignment = councils.getAssignment(topicId);
-            Evaluation currentEval = evaluations.getMyEvaluation(topicId, principal.getName());
+            councils.assertCanViewAssessment(registrationId, principal.getName());
+            Topic topic = councils.getRegistration(registrationId).getTopic();
+            TopicAssignment assignment = councils.getAssignment(registrationId);
+            Evaluation currentEval = evaluations.getMyEvaluation(registrationId, principal.getName());
+            model.addAttribute("registration", councils.getRegistration(registrationId));
             model.addAttribute("topic", topic);
             model.addAttribute("assignment", assignment);
             model.addAttribute("currentEval", currentEval);

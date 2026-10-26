@@ -21,22 +21,22 @@
     <form:errors path="description" cssClass="field-error"/>
     <div class="form-grid">
         <div>
-            <form:label path="roundId">Đợt đăng ký</form:label>
+            <form:label path="roundId">Môn/lớp đăng ký</form:label>
             <form:select path="roundId" required="required">
-                <form:option value="" label="-- Chọn đợt đăng ký --"/>
+                <form:option value="" label="-- Chọn môn/lớp đăng ký --"/>
                 <c:forEach items="${periods}" var="period">
-                    <form:option value="${period.id}" label="${period.name} - ${period.type.displayName}"/>
+                    <form:option value="${period.id}" label="${period.selectionLabel} - ${period.type.displayName}"/>
                 </c:forEach>
             </form:select>
             <form:errors path="roundId" cssClass="field-error"/>
         </div>
         <div>
-            <form:label path="majorId">Chuyên ngành phù hợp (tùy chọn)</form:label>
-            <form:select path="majorId">
-                <form:option value="" label="-- Không giới hạn chuyên ngành --"/>
-                <form:options items="${majors}" itemValue="id" itemLabel="name"/>
+            <form:label path="departmentId">Bộ môn (để trống để dùng bộ môn của đợt)</form:label>
+            <form:select path="departmentId">
+                <form:option value="" label="-- Theo bộ môn của đợt --"/>
+                <form:options items="${departments}" itemValue="id" itemLabel="name"/>
             </form:select>
-            <form:errors path="majorId" cssClass="field-error"/>
+            <form:errors path="departmentId" cssClass="field-error"/>
         </div>
     </div>
     <form:label path="advisorIds">Giảng viên hướng dẫn (giữ Ctrl để chọn tối đa 2)</form:label>

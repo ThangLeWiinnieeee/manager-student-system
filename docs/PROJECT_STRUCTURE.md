@@ -9,8 +9,8 @@ src/main/java/vn/edu/fit/topicmanagement/
 ├── auth/                    Đăng nhập
 ├── dashboard/               Trang tổng quan
 ├── user/                    Tài khoản, vai trò, hồ sơ
-├── major/              Chuyên ngành
-├── registrationperiod/      Đợt đăng ký
+├── department/              Bộ môn
+├── registrationperiod/      Đợt chung của Khoa và đăng ký môn/lớp của GV
 ├── topic/                   Đề tài và GVHD
 ├── studentgroup/            Nhóm sinh viên và đăng ký đề tài
 ├── submission/              Báo cáo
@@ -29,7 +29,7 @@ src/main/webapp/WEB-INF/views/
 ├── common/                  Header, footer, thông báo
 ├── auth/                    Đăng nhập
 ├── profile/                 Hồ sơ cá nhân
-├── admin/                   Tài khoản và chuyên ngành
+├── admin/                   Tài khoản và bộ môn
 ├── registration-period/     Đợt đăng ký
 ├── topic/                   Đề tài
 ├── student-group/           Nhóm sinh viên

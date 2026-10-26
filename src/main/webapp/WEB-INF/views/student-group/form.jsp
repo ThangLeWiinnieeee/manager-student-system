@@ -26,7 +26,7 @@
 
         <p>
             Thiết lập thông tin nhóm sinh viên
-            trong đợt đăng ký đề tài.
+            trong môn/lớp đăng ký đề tài.
         </p>
     </div>
 
@@ -70,7 +70,7 @@
 
     <!-- DOT DANG KY -->
     <form:label path="roundId">
-        Mã đợt đăng ký
+        Mã môn/lớp đăng ký
     </form:label>
 
     <form:input
@@ -78,16 +78,16 @@
         type="number"
         min="1"
         required="required"
-        placeholder="Nhập mã đợt đăng ký"/>
+        placeholder="Nhập mã môn/lớp đăng ký"/>
 
     <form:errors
         path="roundId"
         cssClass="field-error"/>
 
     <p class="form-intro">
-        Xem mã đợt tại trang
-        <a href="<c:url value='/admin/registration-periods'/>">
-            Quản lý đợt đăng ký
+        Xem mã đăng ký môn/lớp tại trang
+        <a href="<c:url value='/course-registrations'/>">
+            Quản lý môn/lớp đăng ký
         </a>.
     </p>
 

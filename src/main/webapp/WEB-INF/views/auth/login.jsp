@@ -18,6 +18,7 @@
     <h1>Đăng nhập</h1>
     <p>Truy cập không gian quản lý đề tài của bạn.</p>
     <c:if test="${param.error != null}"><div class="alert error" role="alert">Không thể đăng nhập. Kiểm tra email, mật khẩu hoặc liên hệ khoa nếu tài khoản bị khóa.</div></c:if>
+    <c:if test="${param.expired != null}"><div class="alert error" role="alert">Thông tin hoặc quyền tài khoản đã thay đổi. Vui lòng đăng nhập lại.</div></c:if>
     <c:if test="${param.logout != null}"><div class="alert success" role="status">Bạn đã đăng xuất thành công.</div></c:if>
     <form action="<c:url value='/login'/>" method="post">
         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}">

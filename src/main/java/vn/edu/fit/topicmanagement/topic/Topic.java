@@ -20,12 +20,12 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import vn.edu.fit.topicmanagement.major.Major;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod;
+import vn.edu.fit.topicmanagement.department.Department;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration;
 import vn.edu.fit.topicmanagement.user.UserAccount;
 
 /**
- * Đề tài: có thể phân loại theo chuyên ngành, thuộc một đợt đăng ký,
+ * Đề tài: có thể phân loại theo bộ môn, thuộc một đợt đăng ký,
  * do một giảng viên tạo, do một hoặc hai giảng viên hướng dẫn (ràng buộc ở TopicService).
  */
 @Entity
@@ -55,11 +55,17 @@ public class Topic {
 
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "round_id")
-    private RegistrationPeriod round;
+    private CourseRegistration round;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "major_id")
-    private Major major;
+    @JoinColumn(name = "department_id")
+    private Department department;
+
+    @Column(name = "proposed_group_id")
+    private Long proposedGroupId;
+
+    public Long getProposedGroupId() { return proposedGroupId; }
+    public void setProposedGroupId(Long value) { proposedGroupId = value; }
 
     /** Giảng viên tạo đề tài (chủ sở hữu bản nháp). */
     @ManyToOne(fetch = FetchType.EAGER, optional = false)
@@ -90,16 +96,21 @@ public class Topic {
     public void setStatus(TopicStatus status) { this.status = status; }
     public String getRejectionReason() { return rejectionReason; }
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
-    public RegistrationPeriod getRound() { return round; }
-    public void setRound(RegistrationPeriod round) { this.round = round; }
-    public Major getMajor() { return major; }
-    public void setMajor(Major major) { this.major = major; }
+    public CourseRegistration getRound() { return round; }
+    public void setRound(CourseRegistration round) { this.round = round; }
+    public Department getDepartment() { return department; }
+    public void setDepartment(Department department) { this.department = department; }
     public UserAccount getCreatedBy() { return createdBy; }
     public void setCreatedBy(UserAccount createdBy) { this.createdBy = createdBy; }
     public Set<UserAccount> getAdvisors() { return advisors; }
     public void setAdvisors(Set<UserAccount> advisors) { this.advisors = advisors; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
+
+    public boolean isManagedBy(String email) {
+        UserAccount manager = round.getLecturer() == null ? createdBy : round.getLecturer();
+        return proposedGroupId == null && manager.getEmail().equalsIgnoreCase(email);
+    }
 
     public boolean isEditableStatus() {
         return status == TopicStatus.DRAFT || status == TopicStatus.REJECTED;

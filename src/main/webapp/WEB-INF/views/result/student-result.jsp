@@ -6,10 +6,12 @@
 <div class="page-heading">
   <div>
     <h1>Kết quả Đề tài & Khóa luận</h1>
-    <p>Xem điểm đánh giá, xếp loại và kết luận chính thức từ Hội đồng bảo vệ sau khi được Khoa công bố.</p>
+    <p>Xem kết quả đánh giá theo từng môn/lớp sau khi Khoa xác nhận và công bố.</p>
   </div>
 </div>
 
+<c:if test="${empty views}"><p class="empty">Bạn chưa có nhóm được chấp thuận đề tài.</p></c:if>
+<c:forEach items="${views}" var="view">
 <c:choose>
   <c:when test="${view != null && view.result != null}">
     <div class="card" style="background: #fff; padding: 28px; border-radius: 8px; border: 1px solid var(--border-color, #e2e8f0); max-width: 750px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
@@ -20,7 +22,7 @@
         </h2>
         <p style="margin: 0; color: #64748b; font-size: 0.9rem;">
           Nhóm thực hiện: <strong><c:out value="${view.group.name}" /></strong>
-          · Đợt: <strong><c:out value="${view.topic.round.name}" /></strong>
+          · Môn/lớp: <strong><c:out value="${view.topic.round.name}" /></strong>
           · Ngày công bố: <strong><c:out value="${view.result.publishedAtText}" /></strong>
         </p>
       </div>
@@ -45,14 +47,14 @@
       </div>
 
       <div style="background: #f8fafc; padding: 16px 20px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-        <h4 style="margin: 0 0 6px 0; color: #334155; font-size: 0.95rem;">Kết luận của Hội đồng đánh giá:</h4>
+        <h4 style="margin: 0 0 6px 0; color: #334155; font-size: 0.95rem;">Kết luận đánh giá:</h4>
         <p style="margin: 0; color: #1e293b; font-style: italic; line-height: 1.6;">
           "<c:out value="${view.result.conclusion}" />"
         </p>
       </div>
 
       <div style="text-align: right; color: #64748b; font-size: 0.85rem;">
-        Hội đồng chấm: <strong><c:out value="${view.result.council.name}" /></strong>
+        <c:if test="${view.result.council != null}">Hội đồng chấm: <strong><c:out value="${view.result.council.name}" /></strong></c:if>
       </div>
     </div>
   </c:when>
@@ -75,5 +77,6 @@
     </div>
   </c:otherwise>
 </c:choose>
+</c:forEach>
 
 <%@ include file="../common/footer.jsp" %>

@@ -19,8 +19,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
 
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService;
 
 @Service
 @Transactional
@@ -29,24 +29,32 @@ public class StudentGroupService {
     private final StudentGroupRepository groups;
     private final StudentGroupMemberRepository members;
     private final UserAccountRepository users;
-    private final RegistrationPeriodService periods;
+    private final CourseRegistrationService periods;
     private final GroupTopicRegistrationRepository registrations;
+    private final GroupInvitationRepository invitations;
+    private final vn.edu.fit.topicmanagement.result.TopicFinalResultRepository results;
+    private final vn.edu.fit.topicmanagement.handover.HandoverLog handovers;
 
-    private static final int MAX_GROUP_MEMBERS = 5;
+
 
 
     public StudentGroupService(
             StudentGroupRepository groups,
             StudentGroupMemberRepository members,
             UserAccountRepository users,
-            RegistrationPeriodService periods,
-            GroupTopicRegistrationRepository registrations) {
+            CourseRegistrationService periods,
+            GroupTopicRegistrationRepository registrations, GroupInvitationRepository invitations,
+            vn.edu.fit.topicmanagement.result.TopicFinalResultRepository results,
+            vn.edu.fit.topicmanagement.handover.HandoverLog handovers) {
 
         this.groups = groups;
         this.members = members;
         this.users = users;
         this.periods = periods;
         this.registrations = registrations;
+        this.invitations = invitations;
+        this.results = results;
+        this.handovers = handovers;
     }
 
 
@@ -54,13 +62,16 @@ public class StudentGroupService {
     @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
     @Transactional(readOnly = true)
     public List<StudentGroup> findAll() {
-        return groups.findAllByOrderByCreatedAtDesc();
+        var allowed = periods.findManageable().stream().map(CourseRegistration::getId).toList();
+        return groups.findAllByOrderByCreatedAtDesc().stream()
+                .filter(g -> CourseRegistrationService.isManager() || allowed.contains(g.getRoundId())).toList();
     }
 
     // 2. Lay nhom theo dot dang ky
     @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
     @Transactional(readOnly = true)
     public List<StudentGroup> findByRound(Long roundId) {
+        periods.assertCanManage(periods.get(roundId));
         return groups.findByRoundIdOrderByNameAsc(roundId);
     }
 
@@ -68,17 +79,17 @@ public class StudentGroupService {
     @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
     @Transactional(readOnly = true)
     public StudentGroup get(Long id) {
-        return groups.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "Khong tim thay nhom sinh vien"));
+        StudentGroup group = getExistingGroup(id);
+        assertStaffCanManage(group);
+        return group;
     }
 
     // 4. Tao nhom
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public StudentGroup create(StudentGroupForm form) {
         String name = normalizeName(form.getName());
         Long roundId = requireRoundId(form.getRoundId());
+        periods.lock(roundId);
 
         if (groups.existsByRoundIdAndNameIgnoreCase(
                 roundId, name)) {
@@ -90,15 +101,17 @@ public class StudentGroupService {
         group.setName(name);
         group.setRoundId(roundId);
 
+        assertStaffCanManage(group);
         return groups.save(group);
     }
 
     // 5. Cap nhat nhom
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public StudentGroup update(
             Long id, StudentGroupForm form) {
 
-        StudentGroup group = getExistingGroup(id);
+        StudentGroup group = lockGroup(id);
+        periods.assertCanManage(periods.get(group.getRoundId()));
         assertGroupNotApproved(id);
 
         String name = normalizeName(form.getName());
@@ -117,9 +130,10 @@ public class StudentGroupService {
                     "Khong the doi dot dang ky cua nhom da co thanh vien");
         }
 
+        periods.assertCanManage(periods.get(roundId));
+        if (!group.getRoundId().equals(roundId))
+            throw new BusinessRuleException("Hãy tạo nhóm mới trong đợt cần chuyển đến");
         group.setName(name);
-        group.setRoundId(roundId);
-
         return group;
     }
 
@@ -137,10 +151,11 @@ public class StudentGroupService {
     }
 
     // 7. Xoa nhom
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public void delete(Long id) {
 
-        StudentGroup group = getExistingGroup(id);
+        StudentGroup group = lockGroup(id);
+        periods.assertCanManage(periods.get(group.getRoundId()));
         assertGroupNotApproved(id);
 
         if (members.countByGroup_Id(id) > 0) {
@@ -157,6 +172,16 @@ public class StudentGroupService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Khong tim thay nhom sinh vien"));
+    }
+
+    private StudentGroup lockGroup(Long id) {
+        periods.lock(groups.findRoundIdById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy nhóm")));
+        return getExistingGroup(id);
+    }
+
+    @PreAuthorize("hasRole('STUDENT')")
+    public StudentGroup lockMyLeaderGroup(Long id) {
+        return requireMyLeaderGroup(id);
     }
 
     // Ham noi bo: chuan hoa ten nhom
@@ -184,6 +209,7 @@ public class StudentGroupService {
                     "Vui long chon dot dang ky hop le");
         }
 
+        periods.get(roundId);
         return roundId;
     }
 
@@ -192,6 +218,7 @@ public class StudentGroupService {
     public List<StudentGroupMemberView> getMembers(Long groupId) {
 
         StudentGroup group = getExistingGroup(groupId);
+        assertStaffCanManage(group);
 
         Long leaderId = group.getLeader() == null
                 ? null
@@ -217,72 +244,79 @@ public class StudentGroupService {
                 .toList();
     }
 
-    // Thêm sinh viên vào nhóm
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public void addMember(Long groupId, String email) {
-
-        StudentGroup group = getExistingGroup(groupId);
-        assertGroupNotApproved(groupId);
-
-        if (email == null || email.isBlank()) {
-            throw new BusinessRuleException(
-                    "Email sinh viên không được để trống");
-        }
-
-        UserAccount student = users
-                .findByEmailIgnoreCase(email.trim())
-                .orElseThrow(() -> new BusinessRuleException(
-                        "Không tìm thấy tài khoản sinh viên"));
-
-        if (student.getRole() != Role.STUDENT) {
-            throw new BusinessRuleException(
-                    "Tài khoản không có vai trò sinh viên");
-        }
-
-        if (!student.isEnabled()) {
-            throw new BusinessRuleException(
-                    "Tài khoản sinh viên đã bị khóa");
-        }
-
-        if (members.existsByGroup_IdAndStudent_Id(
-                groupId, student.getId())) {
-            throw new BusinessRuleException(
-                    "Sinh viên đã thuộc nhóm này");
-        }
-
-
-        // Kiem tra nhom chua du 5 thanh vien
-        assertGroupHasSpace(groupId);
-
-        // Mot sinh vien chi duoc thuoc mot nhom
-        // trong cung dot dang ky
-        boolean alreadyJoinedAnotherGroup = members
-                .findByStudent_Id(student.getId())
-                .stream()
-                .anyMatch(member ->
-                        member.getGroup()
-                                .getRoundId()
-                                .equals(group.getRoundId()));
-
-        if (alreadyJoinedAnotherGroup) {
-
-            throw new BusinessRuleException(
-                    "Sinh viên đã thuộc một nhóm khác "
-                            + "trong cùng đợt đăng ký");
-        }
-
-
-        StudentGroupMember member =
-                new StudentGroupMember(group, student);
-
-        members.save(member);
+        StudentGroup group = lockGroup(groupId);
+        assertStaffCanManage(group);
+        invite(group, email);
     }
+
+    private UserAccount eligibleMember(StudentGroup group, String email) {
+        assertGroupNotApproved(group.getId());
+        periods.assertSvWindowOpen(group.getRoundId());
+        if (email == null || email.isBlank()) throw new BusinessRuleException("Cần email sinh viên");
+        UserAccount student = users.findByEmailIgnoreCase(email.trim())
+                .orElseThrow(() -> new BusinessRuleException("Không tìm thấy sinh viên"));
+        if (student.getRole() != Role.STUDENT || !student.isEnabled())
+            throw new BusinessRuleException("Sinh viên phải có tài khoản đang hoạt động");
+        periods.assertParticipant(group.getRoundId(), student.getId());
+        assertGroupHasSpace(group.getId());
+        if (members.findByStudent_Id(student.getId()).stream()
+                .anyMatch(m -> m.getGroup().getRoundId().equals(group.getRoundId())))
+            throw new BusinessRuleException("Sinh viên đã thuộc một nhóm trong môn/lớp này");
+        return student;
+    }
+
+    private void invite(StudentGroup group, String email) {
+        UserAccount student = eligibleMember(group, email);
+        var id = new StudentGroupMemberId(group.getId(), student.getId());
+        if (!invitations.existsById(id)) invitations.save(new GroupInvitation(group, student));
+    }
+
+    @PreAuthorize("hasRole('STUDENT')")
+    @Transactional(readOnly = true)
+    public List<GroupInvitation> findMyInvitations() {
+        return invitations.findByStudent_Id(getCurrentStudent().getId());
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','LECTURER','STUDENT')")
+    @Transactional(readOnly = true)
+    public List<GroupInvitation> findInvitations(Long groupId) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"))) getMyGroup(groupId);
+        else get(groupId);
+        return invitations.findByGroup_Id(groupId);
+    }
+
+    @PreAuthorize("hasRole('STUDENT')")
+    public void respondToInvitation(Long groupId, boolean accept) {
+        StudentGroup group = lockGroup(groupId);
+        UserAccount student = getCurrentStudent();
+        var id = new StudentGroupMemberId(groupId, student.getId());
+        var invitation = invitations.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lời mời của bạn"));
+        if (accept) {
+            eligibleMember(group, student.getEmail());
+            members.save(new StudentGroupMember(group, student));
+        }
+        invitations.delete(invitation);
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN','LECTURER','STUDENT')")
+    public void cancelInvitation(Long groupId, Long studentId) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_STUDENT"))) requireMyLeaderGroup(groupId);
+        else { StudentGroup group = lockGroup(groupId); assertStaffCanManage(group); }
+        invitations.findById(new StudentGroupMemberId(groupId, studentId)).ifPresent(invitations::delete);
+    }
+
 //    Xóa thành viên khỏi nhóm
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public void removeMember(Long groupId, Long studentId) {
 
-        StudentGroup group = getExistingGroup(groupId);
+        StudentGroup group = lockGroup(groupId);
+        assertStaffCanManage(group);
         assertGroupNotApproved(groupId);
 
         StudentGroupMemberId memberId =
@@ -305,11 +339,14 @@ public class StudentGroupService {
     }
 //    Chọn nhóm trưởng
 
-    @PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LECTURER')")
     public void assignLeader(Long groupId, Long studentId) {
 
-        StudentGroup group = getExistingGroup(groupId);
-        assertGroupNotApproved(groupId);
+        StudentGroup group = lockGroup(groupId);
+        assertStaffCanManage(group);
+        registrations.findByGroup_Id(groupId).flatMap(r -> results.findByRegistration_Id(r.getId()))
+                .filter(r -> r.isPresidentConfirmed() || r.getPublishedAt() != null)
+                .ifPresent(r -> { throw new BusinessRuleException("Nhóm đã chốt kết quả: không đổi nhóm trưởng"); });
 
         StudentGroupMemberId memberId =
                 new StudentGroupMemberId(groupId, studentId);
@@ -327,6 +364,9 @@ public class StudentGroupService {
                     "Sinh viên không đủ điều kiện làm nhóm trưởng");
         }
 
+        if (group.getLeader() != null && !group.getLeader().getId().equals(studentId))
+            handovers.record(group.getRoundId(), "Nhóm trưởng", groupId, group.getLeader().getId(), studentId,
+                    "GV phụ trách/quản trị viên chuyển quyền cho thành viên hiện hữu");
         group.setLeader(student);
     }
 
@@ -386,11 +426,11 @@ public class StudentGroupService {
 
     @PreAuthorize("hasRole('STUDENT')")
     @Transactional(readOnly = true)
-    public List<RegistrationPeriod> findOpenStudentPeriods() {
+    public List<CourseRegistration> findOpenStudentPeriods() {
 
         LocalDateTime now = LocalDateTime.now();
 
-        return periods.findAll()
+        return periods.findJoinedCourses()
                 .stream()
                 .filter(period -> period.isSvWindowOpen(now))
                 .toList();
@@ -429,10 +469,12 @@ public class StudentGroupService {
 
         if (roundId == null || roundId <= 0) {
             throw new BusinessRuleException(
-                    "Vui lòng chọn đợt đăng ký");
+                    "Vui lòng chọn môn/lớp đăng ký");
         }
 
+        periods.lock(roundId);
         periods.assertSvWindowOpen(roundId);
+        periods.assertParticipant(roundId, student.getId());
 
         // 3. Khong cho mot sinh vien thuoc hai nhom
         // trong cung mot dot dang ky
@@ -445,14 +487,14 @@ public class StudentGroupService {
 
         if (alreadyJoined) {
             throw new BusinessRuleException(
-                    "Bạn đã tham gia một nhóm trong đợt này");
+                    "Bạn đã tham gia một nhóm trong môn/lớp này");
         }
 
         // 4. Tao nhom
         StudentGroup group = create(form);
 
         // 5. Tu dong them nguoi tao vao nhom
-        addMember(group.getId(), student.getEmail());
+        members.save(new StudentGroupMember(group, eligibleMember(group, student.getEmail())));
 
         // 6. Tu dong dat nguoi tao lam nhom truong
         assignLeader(group.getId(), student.getId());
@@ -511,7 +553,7 @@ public class StudentGroupService {
 
         UserAccount student = getCurrentStudent();
 
-        StudentGroup group = getExistingGroup(groupId);
+        StudentGroup group = lockGroup(groupId);
 
         if (!members.existsByGroup_IdAndStudent_Id(
                 groupId, student.getId())) {
@@ -543,60 +585,9 @@ public class StudentGroupService {
 
 
     @PreAuthorize("hasRole('STUDENT')")
-    @Transactional
-    public void addMemberByLeader(
-            Long groupId,
-            String email) {
-
-        // 1. Kiem tra quyen nhom truong
-        StudentGroup group =
-                requireMyLeaderGroup(groupId);
-        assertGroupNotApproved(groupId);
-
-        // 2. Kiem tra dot dang ky con mo
-        periods.assertSvWindowOpen(group.getRoundId());
-
-        // 3. Kiem tra gioi han toi da 5 thanh vien
-        assertGroupHasSpace(groupId);
-
-        // 4. Kiem tra email
-        if (email == null || email.isBlank()) {
-            throw new BusinessRuleException(
-                    "Vui lòng nhập email sinh viên");
-        }
-
-        String normalizedEmail = email.trim();
-
-        // 4. Tim tai khoan sinh vien
-        UserAccount student = users
-                .findByEmailIgnoreCase(normalizedEmail)
-                .orElseThrow(() -> new BusinessRuleException(
-                        "Không tìm thấy sinh viên"));
-
-        if (student.getRole() != Role.STUDENT
-                || !student.isEnabled()) {
-            throw new BusinessRuleException(
-                    "Tài khoản không phải sinh viên đang hoạt động");
-        }
-
-        // 5. Mot sinh vien chi thuoc mot nhom trong moi dot
-        boolean alreadyJoined = members
-                .findByStudent_Id(student.getId())
-                .stream()
-                .anyMatch(member ->
-                        group.getRoundId().equals(
-                                member.getGroup().getRoundId()));
-
-        if (alreadyJoined) {
-            throw new BusinessRuleException(
-                    "Sinh viên đã thuộc một nhóm trong đợt này");
-        }
-
-        // 6. Su dung lai nghiep vu them thanh vien
-        addMember(groupId, normalizedEmail);
+    public void addMemberByLeader(Long groupId, String email) {
+        invite(requireMyLeaderGroup(groupId), email);
     }
-
-
 
     @PreAuthorize("hasRole('STUDENT')")
     @Transactional
@@ -607,6 +598,7 @@ public class StudentGroupService {
         // 1. Kiem tra quyen nhom truong
         StudentGroup group =
                 requireMyLeaderGroup(groupId);
+        periods.lock(group.getRoundId());
         assertGroupNotApproved(groupId);
 
         // 2. Kiem tra dot dang ky con mo
@@ -638,6 +630,13 @@ public class StudentGroupService {
     }
 
 
+    @Transactional(readOnly = true)
+    public boolean isMembershipOpen(Long groupId) {
+        var group = getExistingGroup(groupId);
+        return periods.get(group.getRoundId()).isSvWindowOpen(LocalDateTime.now())
+                && !registrations.existsByGroup_IdAndStatus(groupId, GroupTopicRegistrationStatus.APPROVED);
+    }
+
     private void assertGroupNotApproved(Long groupId) {
 
         boolean approved =
@@ -654,13 +653,20 @@ public class StudentGroupService {
         }
     }
 
+    private void assertStaffCanManage(StudentGroup group) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_LECTURER")))
+            periods.assertCanManage(periods.get(group.getRoundId()));
+    }
+
     private void assertGroupHasSpace(Long groupId) {
 
         long memberCount = members.countByGroup_Id(groupId);
 
-        if (memberCount >= MAX_GROUP_MEMBERS) {
+        int limit = periods.get(getExistingGroup(groupId).getRoundId()).getMaxMembers();
+        if (memberCount >= limit) {
             throw new BusinessRuleException(
-                    "Nhóm đã đủ 5 thành viên, không thể thêm sinh viên mới");
+                    "Nhóm chỉ được tối đa " + limit + " thành viên trong môn/lớp này");
         }
     }
 

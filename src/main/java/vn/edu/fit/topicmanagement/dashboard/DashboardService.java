@@ -2,23 +2,23 @@ package vn.edu.fit.topicmanagement.dashboard;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.edu.fit.topicmanagement.major.MajorRepository;
+import vn.edu.fit.topicmanagement.department.DepartmentRepository;
 import vn.edu.fit.topicmanagement.user.UserAccountRepository;
 
 @Service
 @Transactional(readOnly = true)
 public class DashboardService {
     private final UserAccountRepository users;
-    private final MajorRepository majors;
+    private final DepartmentRepository departments;
 
-    public DashboardService(UserAccountRepository users, MajorRepository majors) {
+    public DashboardService(UserAccountRepository users, DepartmentRepository departments) {
         this.users = users;
-        this.majors = majors;
+        this.departments = departments;
     }
 
     public Summary getSummary() {
-        return new Summary(users.count(), majors.count());
+        return new Summary(users.count(), departments.count());
     }
 
-    public record Summary(long userCount, long majorCount) {}
+    public record Summary(long userCount, long departmentCount) {}
 }

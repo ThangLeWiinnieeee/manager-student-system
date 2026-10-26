@@ -16,10 +16,13 @@ import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 @ExtendWith(MockitoExtension.class)
 class RegistrationPeriodServiceTest {
     @Mock RegistrationPeriodRepository periods;
+    @Mock CourseRegistrationRepository courses;
+    @org.junit.jupiter.api.AfterEach
+    void clearSecurity() { org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
+
 
     private RegistrationPeriodForm validKltnForm() {
         RegistrationPeriodForm form = new RegistrationPeriodForm();
-        form.setName("Đợt đăng ký KLTN HK1 2026-2027");
         form.setType(RoundType.KLTN);
         form.setGvStart(LocalDateTime.of(2026, 10, 1, 8, 0));
         form.setGvEnd(LocalDateTime.of(2026, 10, 31, 17, 0));
@@ -32,9 +35,11 @@ class RegistrationPeriodServiceTest {
 
     @Test
     void acceptsValidKltnPeriod() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("admin", "", java.util.List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_ADMIN"))));
         when(periods.save(any(RegistrationPeriod.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         RegistrationPeriod period = service.create(validKltnForm());
 
@@ -46,7 +51,7 @@ class RegistrationPeriodServiceTest {
     void kltnRequiresCouncilReportDate() {
         RegistrationPeriodForm form = validKltnForm();
         form.setCouncilReportDate(null);
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
     }
@@ -56,7 +61,7 @@ class RegistrationPeriodServiceTest {
         RegistrationPeriodForm form = validKltnForm();
         form.setType(RoundType.MON_HOC);
         form.setGvpbDeadline(null);
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
     }
@@ -66,7 +71,7 @@ class RegistrationPeriodServiceTest {
         RegistrationPeriodForm form = validKltnForm();
         form.setType(RoundType.NCKH);
         form.setGvpbDeadline(null);
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
     }
@@ -76,7 +81,7 @@ class RegistrationPeriodServiceTest {
         RegistrationPeriodForm form = validKltnForm();
         form.setType(RoundType.MON_HOC);
         form.setCouncilReportDate(null);
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
     }
@@ -85,7 +90,7 @@ class RegistrationPeriodServiceTest {
     void svWindowMustStartAfterGvWindowEnds() {
         RegistrationPeriodForm form = validKltnForm();
         form.setSvStart(LocalDateTime.of(2026, 10, 15, 8, 0));
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
     }
@@ -94,7 +99,7 @@ class RegistrationPeriodServiceTest {
     void gvWindowMustHaveStartBeforeEnd() {
         RegistrationPeriodForm form = validKltnForm();
         form.setGvStart(LocalDateTime.of(2026, 11, 5, 8, 0));
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
     }
@@ -103,7 +108,7 @@ class RegistrationPeriodServiceTest {
     void gvpbDeadlineMustBeAfterSvWindowEnds() {
         RegistrationPeriodForm form = validKltnForm();
         form.setGvpbDeadline(LocalDateTime.of(2026, 11, 10, 17, 0));
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
     }
@@ -112,7 +117,7 @@ class RegistrationPeriodServiceTest {
     void councilDateMustBeAfterGvpbDeadline() {
         RegistrationPeriodForm form = validKltnForm();
         form.setCouncilReportDate(LocalDateTime.of(2026, 12, 1, 8, 0));
-        RegistrationPeriodService service = new RegistrationPeriodService(periods);
+        RegistrationPeriodService service = new RegistrationPeriodService(periods, courses);
 
         assertThrows(BusinessRuleException.class, () -> service.create(form));
     }

@@ -1,15 +1,10 @@
 package vn.edu.fit.topicmanagement.registrationperiod;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
 
 public class RegistrationPeriodForm {
-    @NotBlank(message = "Tên đợt đăng ký không được để trống")
-    @Size(max = 200, message = "Tên đợt đăng ký tối đa 200 ký tự")
-    private String name;
 
     @NotNull(message = "Vui lòng chọn loại đợt đăng ký")
     private RoundType type;
@@ -36,8 +31,7 @@ public class RegistrationPeriodForm {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime councilReportDate;
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+
     public RoundType getType() { return type; }
     public void setType(RoundType type) { this.type = type; }
     public LocalDateTime getGvStart() { return gvStart; }

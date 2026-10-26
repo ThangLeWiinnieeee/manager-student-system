@@ -57,6 +57,9 @@ public class ReportSubmissionService {
     private final UserAccountService users;
 
     private final Path storageRoot;
+    private final vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService periods;
+    private final vn.edu.fit.topicmanagement.evaluation.EvaluationRepository evaluations;
+    private final vn.edu.fit.topicmanagement.result.TopicFinalResultRepository results;
 
     public ReportSubmissionService(
             ReportSubmissionRepository reports,
@@ -64,12 +67,18 @@ public class ReportSubmissionService {
             GroupTopicRegistrationService registrations,
             UserAccountService users,
             @Value("${app.submission.storage-dir}")
-            String storageDir) {
+            String storageDir,
+            vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService periods,
+            vn.edu.fit.topicmanagement.evaluation.EvaluationRepository evaluations,
+            vn.edu.fit.topicmanagement.result.TopicFinalResultRepository results) {
 
         this.reports = reports;
         this.groups = groups;
         this.registrations = registrations;
         this.users = users;
+        this.periods = periods;
+        this.evaluations = evaluations;
+        this.results = results;
 
         this.storageRoot =
                 Path.of(storageDir)
@@ -205,6 +214,7 @@ public class ReportSubmissionService {
             MultipartFile file) {
 
         StudentGroup group = groups.getMyGroup(groupId);
+        periods.lock(group.getRoundId());
 
         // Kiem tra quyen nhom truong tai backend
         if (!groups.isMyGroupLeader(groupId)) {
@@ -214,6 +224,9 @@ public class ReportSubmissionService {
 
         // Phai duoc chap thuan de tai
         assertApproved(groupId);
+        Long registrationId = registrations.findMyRegistration(groupId).getId();
+        if (!evaluations.findByRegistration_Id(registrationId).isEmpty() || results.findByRegistration_Id(registrationId).isPresent())
+            throw new BusinessRuleException("Nhóm đã bắt đầu được chấm: báo cáo đã khóa");
 
         String originalFilename = validatePdf(file);
 

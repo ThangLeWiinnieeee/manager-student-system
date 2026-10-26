@@ -17,15 +17,15 @@
 
     <div class="form-group" style="margin-bottom: 16px;">
       <label for="name" style="display: block; font-weight: 600; margin-bottom: 6px;">Tên hội đồng *</label>
-      <input type="text" id="name" name="name" value="<c:out value='${councilForm.name}'/>" required maxlength="150" placeholder="Ví dụ: Hội đồng KLTN số 01 - Chuyên ngành HTTT" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;" />
+      <input type="text" id="name" name="name" value="<c:out value='${councilForm.name}'/>" required maxlength="150" placeholder="Ví dụ: Hội đồng KLTN số 01 - Bộ môn HTTT" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;" />
     </div>
 
     <div class="form-group" style="margin-bottom: 16px;">
-      <label for="roundId" style="display: block; font-weight: 600; margin-bottom: 6px;">Đợt đăng ký *</label>
+      <label for="roundId" style="display: block; font-weight: 600; margin-bottom: 6px;">Môn/lớp đăng ký *</label>
       <select id="roundId" name="roundId" required style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px;">
         <c:forEach items="${periods}" var="p">
           <option value="${p.id}" ${councilForm.roundId == p.id ? 'selected' : ''}>
-            <c:out value="${p.name}" /> (<c:out value="${p.type.displayName}" />)
+            <c:out value="${p.selectionLabel}" /> (<c:out value="${p.type.displayName}" />)
           </option>
         </c:forEach>
       </select>

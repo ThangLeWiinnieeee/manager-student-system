@@ -1,16 +1,16 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
-<c:set var="pageTitle" value="Quản lý Hội đồng bảo vệ" />
+<c:set var="pageTitle" value="Hội đồng bảo vệ / nghiệm thu" />
 <%@ include file="../common/header.jsp" %>
 
 <div class="page-heading">
   <div>
-    <h1>Quản lý Hội đồng bảo vệ</h1>
-    <p>Thành lập hội đồng chấm khóa luận/tiểu luận, bổ nhiệm Chủ tịch, Thư ký và Ủy viên.</p>
+    <h1>Hội đồng bảo vệ / nghiệm thu</h1>
+    <p>Thành lập hội đồng bảo vệ KLTN hoặc nghiệm thu NCKH, bổ nhiệm Chủ tịch, Thư ký và Ủy viên.</p>
   </div>
   <div style="display: flex; gap: 8px;">
-    <a class="button" href="<c:url value='/admin/councils/assignments'/>">Phân công đề tài & GVPB</a>
+    <a class="button" href="<c:url value='/admin/councils/assignments'/>">Phân công đánh giá</a>
     <a class="button primary" href="<c:url value='/admin/councils/new'/>">Tạo hội đồng mới</a>
   </div>
 </div>
@@ -21,7 +21,7 @@
     <option value="">-- Tất cả các đợt --</option>
     <c:forEach items="${periods}" var="p">
       <option value="${p.id}" ${selectedRoundId == p.id ? 'selected' : ''}>
-        <c:out value="${p.name}" /> (<c:out value="${p.type.displayName}" />)
+        <c:out value="${p.selectionLabel}" /> (<c:out value="${p.type.displayName}" />)
       </option>
     </c:forEach>
   </select>
@@ -32,7 +32,7 @@
     <thead>
       <tr>
         <th>Tên hội đồng</th>
-        <th>Đợt đăng ký</th>
+        <th>Môn/lớp đăng ký</th>
         <th>Địa điểm</th>
         <th>Ngày báo cáo</th>
         <th>Số thành viên</th>

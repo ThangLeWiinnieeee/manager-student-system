@@ -27,6 +27,9 @@ public class StudentGroupMember {
     @JoinColumn(name = "group_id", nullable = false)
     private StudentGroup group;
 
+    @Column(name = "round_id", nullable = false)
+    private Long roundId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @MapsId("studentId")
     @JoinColumn(name = "student_id", nullable = false)
@@ -42,6 +45,7 @@ public class StudentGroupMember {
             StudentGroup group,
             UserAccount student) {
         this.group = group;
+        this.roundId = group.getRoundId();
         this.student = student;
     }
 
@@ -75,6 +79,7 @@ public class StudentGroupMember {
 
     @PrePersist
     void initializeJoinedAt() {
+        roundId = group.getRoundId();
         if (joinedAt == null) {
             joinedAt = Instant.now();
         }

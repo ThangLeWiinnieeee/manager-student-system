@@ -18,7 +18,7 @@
 
         <p>
             Xem và quản lý các nhóm sinh viên mà bạn
-            đang tham gia trong những đợt đăng ký đề tài.
+            đang tham gia trong những môn/lớp đăng ký đề tài.
         </p>
     </div>
 
@@ -52,6 +52,31 @@
 </c:if>
 
 
+<c:if test="${not empty invitations}">
+<section class="panel">
+<h2>Lời mời vào nhóm</h2>
+<p>Chỉ khi đồng ý, bạn mới trở thành thành viên. Hệ thống kiểm tra lại thời hạn, chỗ trống và nhóm hiện tại khi xác nhận.</p>
+<c:forEach items="${invitations}" var="invitation">
+<form method="post" action="<c:url value='/student/my-groups/${invitation.group.id}/invitations/respond'/>">
+<p><strong><c:out value="${invitation.group.name}"/></strong> · Mã lớp <c:out value="${invitation.group.roundId}"/></p>
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+<button class="button primary" type="submit" name="accept" value="true">Đồng ý tham gia</button>
+<button class="button" type="submit" name="accept" value="false">Từ chối</button>
+</form>
+</c:forEach>
+</section>
+</c:if>
+<section class="panel">
+<h2>Tham gia lớp đề tài</h2>
+<p>Nhập mã giảng viên cung cấp. Đây là lớp thực hiện đề tài, không phải đăng ký học phần.</p>
+<form method="post" action="<c:url value='/student/my-groups/join'/>">
+<input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+<label for="joinCode">Mã tham gia</label><input id="joinCode" name="code" maxlength="16" minlength="16" required autocomplete="off"/>
+<button class="button primary" type="submit">Tham gia lớp</button></form>
+<c:if test="${not empty joinedCourses}"><h3>Lớp đã tham gia</h3><ul>
+<c:forEach items="${joinedCourses}" var="course"><li><c:out value="${course.selectionLabel}"/> · <c:out value="${course.stage}"/></li></c:forEach>
+</ul><p>Bạn có thể tạo nhóm hoặc nhận lời mời từ nhóm trưởng và xác nhận bên dưới.</p></c:if>
+</section>
 <!-- ============================= -->
 <!-- DANH SACH NHOM CUA TOI        -->
 <!-- ============================= -->
@@ -82,7 +107,7 @@
                 <tr>
                     <th>Mã nhóm</th>
                     <th>Tên nhóm</th>
-                    <th>Đợt đăng ký</th>
+                    <th>Môn/lớp đăng ký</th>
                     <th>Vai trò của tôi</th>
                     <th>Thao tác</th>
                 </tr>

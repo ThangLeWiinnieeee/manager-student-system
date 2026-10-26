@@ -44,9 +44,11 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(
-            HttpSecurity http) throws Exception {
+            HttpSecurity http, UserAccountRepository users) throws Exception {
 
         return http
+                .addFilterBefore(new vn.edu.fit.topicmanagement.auth.AccountStatusFilter(users),
+                        org.springframework.security.web.access.intercept.AuthorizationFilter.class)
 
                 .authorizeHttpRequests(authorize -> authorize
 
@@ -64,7 +66,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // TV3:
-                        // ADMIN, DEAN, LECTURER
+                        // ADMIN, LECTURER
                         // duoc quan ly nhom sinh vien
                         //
                         // PHAI nam TRUOC /admin/**
@@ -73,11 +75,15 @@ public class SecurityConfig {
                                 "/admin/student-groups/**"
                         ).hasAnyRole(
                                 "ADMIN",
-                                "DEAN",
                                 "LECTURER"
                         )
 
+                        .requestMatchers("/admin/users", "/admin/users/**")
+                        .hasRole("ADMIN")
+
                         // Cac chuc nang admin khac:
+                        .requestMatchers("/admin/registration-periods", "/admin/registration-periods/**")
+                        .hasAnyRole("ADMIN", "DEAN", "LECTURER")
                         // giu nguyen quyen ADMIN va DEAN
                         .requestMatchers("/admin/**")
                         .hasAnyRole(

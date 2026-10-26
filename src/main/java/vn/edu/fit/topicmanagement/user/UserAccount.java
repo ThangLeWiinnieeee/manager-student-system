@@ -13,7 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import vn.edu.fit.topicmanagement.major.Major;
+import vn.edu.fit.topicmanagement.department.Department;
 
 @Entity
 @Table(name = "users")
@@ -38,9 +38,14 @@ public class UserAccount {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @Column(name = "auth_version", nullable = false)
+    private long authVersion;
+    public long getAuthVersion() { return authVersion; }
+    public void invalidateSessions() { authVersion++; }
+
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "major_id")
-    private Major major;
+    @JoinColumn(name = "academic_department_id")
+    private Department department;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -57,8 +62,8 @@ public class UserAccount {
     public void setRole(Role role) { this.role = role; }
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public Major getMajor() { return major; }
-    public void setMajor(Major major) { this.major = major; }
+    public Department getDepartment() { return department; }
+    public void setDepartment(Department department) { this.department = department; }
     public Instant getCreatedAt() { return createdAt; }
 
     @PrePersist

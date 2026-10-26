@@ -11,10 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 import vn.edu.fit.topicmanagement.common.exception.ResourceNotFoundException;
-import vn.edu.fit.topicmanagement.major.Major;
-import vn.edu.fit.topicmanagement.major.MajorService;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
+import vn.edu.fit.topicmanagement.department.Department;
+import vn.edu.fit.topicmanagement.department.DepartmentService;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService;
 import vn.edu.fit.topicmanagement.user.Role;
 import vn.edu.fit.topicmanagement.user.UserAccount;
 import vn.edu.fit.topicmanagement.user.UserAccountService;
@@ -30,19 +30,25 @@ public class TopicService {
     private static final int PAGE_SIZE = 10;
 
     private final TopicRepository topics;
-    private final RegistrationPeriodService periods;
-    private final MajorService majors;
+    private final CourseRegistrationService periods;
+    private final DepartmentService departments;
     private final UserAccountService users;
+    private final vn.edu.fit.topicmanagement.council.TopicAssignmentRepository assignments;
+    private final vn.edu.fit.topicmanagement.studentgroup.StudentGroupMemberRepository members;
 
     public TopicService(
             TopicRepository topics,
-            RegistrationPeriodService periods,
-            MajorService majors,
-            UserAccountService users) {
+            CourseRegistrationService periods,
+            DepartmentService departments,
+            UserAccountService users,
+            vn.edu.fit.topicmanagement.council.TopicAssignmentRepository assignments,
+            vn.edu.fit.topicmanagement.studentgroup.StudentGroupMemberRepository members) {
         this.topics = topics;
         this.periods = periods;
-        this.majors = majors;
+        this.departments = departments;
         this.users = users;
+        this.assignments = assignments;
+        this.members = members;
     }
 
     @Transactional(readOnly = true)
@@ -52,22 +58,27 @@ public class TopicService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Topic> search(Long roundId, Long majorId, TopicStatus status,
+    public Page<Topic> search(Long roundId, Long departmentId, TopicStatus status,
                               String viewerEmail, int page) {
         Pageable pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("updatedAt").descending());
-        return topics.search(roundId, majorId, status, viewerEmail, TopicStatus.PUBLISHED, pageable);
+        return topics.search(roundId, departmentId, status, viewerEmail, TopicStatus.PUBLISHED, pageable);
     }
 
     /** GV tạo đề tài (mặc định là bản nháp); submitNow = true sẽ gửi duyệt ngay. */
     public Topic create(String ownerEmail, TopicForm form, boolean submitNow) {
         UserAccount owner = users.getByEmail(ownerEmail.trim());
-        Major major = resolveMajor(form.getMajorId());
-        RegistrationPeriod round = periods.get(form.getRoundId());
+        Department department = resolveDepartment(form.getDepartmentId());
+        CourseRegistration round = periods.get(form.getRoundId());
+        periods.assertCanManage(round);
+        if (round.getRegistrationMode() == vn.edu.fit.topicmanagement.registrationperiod.RegistrationMode.SELF_PROPOSED)
+            throw new BusinessRuleException("Đợt này dành cho sinh viên tự đề xuất; không cần tạo đề tài trống");
+        if (department == null && round.getDepartment() == null) throw new BusinessRuleException("Vui lòng chọn bộ môn");
+        if (department == null) department = round.getDepartment();
         Set<UserAccount> advisors = resolveAdvisors(form.getAdvisorIds());
 
         Topic topic = new Topic();
         topic.setCreatedBy(owner);
-        topic.setMajor(major);
+        topic.setDepartment(department);
         topic.setRound(round);
         topic.setStatus(TopicStatus.DRAFT);
         apply(topic, form, advisors);
@@ -79,8 +90,13 @@ public class TopicService {
         Topic topic = get(id);
         requireOwner(topic, ownerEmail);
         requireEditable(topic);
-        topic.setMajor(resolveMajor(form.getMajorId()));
+        topic.setDepartment(resolveDepartment(form.getDepartmentId()));
         topic.setRound(periods.get(form.getRoundId()));
+        periods.assertCanManage(topic.getRound());
+        if (topic.getRound().getRegistrationMode() == vn.edu.fit.topicmanagement.registrationperiod.RegistrationMode.SELF_PROPOSED)
+            throw new BusinessRuleException("Đợt này dành cho sinh viên tự đề xuất đề tài");
+        if (topic.getDepartment() == null) topic.setDepartment(topic.getRound().getDepartment());
+        if (topic.getDepartment() == null) throw new BusinessRuleException("Vui lòng chọn bộ môn");
         Set<UserAccount> advisors = resolveAdvisors(form.getAdvisorIds());
         apply(topic, form, advisors);
         Topic saved = topics.save(topic);
@@ -93,6 +109,7 @@ public class TopicService {
         requireOwner(topic, ownerEmail);
         requireStatusTransition(topic, TopicStatus.PENDING);
         periods.assertGvWindowOpen(topic.getRound().getId());
+        requireContent(topic);
         topic.setStatus(TopicStatus.PENDING);
         topic.setRejectionReason(null);
         return topics.save(topic);
@@ -101,6 +118,8 @@ public class TopicService {
     /** Khoa duyệt đề tài. */
     public Topic approve(Long id) {
         Topic topic = get(id);
+        if (topic.getProposedGroupId() != null) throw new BusinessRuleException("Duyệt nội dung đề xuất tại danh sách đăng ký nhóm");
+        requireContent(topic);
         requireStatusTransition(topic, TopicStatus.APPROVED);
         topic.setStatus(TopicStatus.APPROVED);
         topic.setRejectionReason(null);
@@ -110,6 +129,7 @@ public class TopicService {
     /** Khoa từ chối kèm lý do - lý do hiển thị cho GV để sửa và gửi lại. */
     public Topic reject(Long id, String reason) {
         Topic topic = get(id);
+        if (topic.getProposedGroupId() != null) throw new BusinessRuleException("Từ chối đề xuất tại danh sách đăng ký nhóm");
         requireStatusTransition(topic, TopicStatus.REJECTED);
         topic.setStatus(TopicStatus.REJECTED);
         topic.setRejectionReason(reason == null ? "" : reason.trim());
@@ -119,6 +139,7 @@ public class TopicService {
     /** Khoa công bố đề tài - chỉ đề tài đã duyệt mới được công bố. */
     public Topic publish(Long id) {
         Topic topic = get(id);
+        if (topic.getProposedGroupId() != null) throw new BusinessRuleException("Đề xuất riêng thuộc nhóm, không đưa vào danh sách chọn đề tài");
         requireStatusTransition(topic, TopicStatus.PUBLISHED);
         topic.setStatus(TopicStatus.PUBLISHED);
         return topics.save(topic);
@@ -138,7 +159,7 @@ public class TopicService {
         form.setTitle(topic.getTitle());
         form.setDescription(topic.getDescription());
         form.setRoundId(topic.getRound().getId());
-        form.setMajorId(topic.getMajor() == null ? null : topic.getMajor().getId());
+        form.setDepartmentId(topic.getDepartment() == null ? null : topic.getDepartment().getId());
         form.setAdvisorIds(topic.getAdvisors().stream().map(UserAccount::getId).toList());
         return form;
     }
@@ -150,8 +171,8 @@ public class TopicService {
     }
 
     private void requireOwner(Topic topic, String email) {
-        if (!topic.getCreatedBy().getEmail().equalsIgnoreCase(email)) {
-            throw new BusinessRuleException("Bạn không phải người tạo đề tài này");
+        if (!topic.isManagedBy(email)) {
+            throw new BusinessRuleException("Bạn không phụ trách đề tài của môn/lớp này");
         }
     }
 
@@ -170,13 +191,48 @@ public class TopicService {
         }
     }
 
-    private Major resolveMajor(Long id) {
+    private Department resolveDepartment(Long id) {
         if (id == null) return null;
-        Major major = majors.get(id);
-        if (!major.isEnabled()) {
-            throw new BusinessRuleException("Chuyên ngành đã bị khóa");
+        Department department = departments.get(id);
+        if (!department.isEnabled()) {
+            throw new BusinessRuleException("Bộ môn đã bị khóa");
         }
-        return major;
+        return department;
+    }
+
+    private void requireContent(Topic topic) {
+        if (topic.getDepartment() == null || topic.getDescription() == null || topic.getDescription().isBlank())
+            throw new BusinessRuleException("Đề tài cần bộ môn và mô tả nội dung trước khi gửi duyệt");
+    }
+
+    @Transactional(readOnly = true)
+    public Topic getVisible(Long id, String email) {
+        Topic topic = get(id);
+        if (topic.isManagedBy(email) || CourseRegistrationService.isManager()
+                || (topic.getProposedGroupId() == null && topic.getStatus() == TopicStatus.PUBLISHED)
+                || topic.getCreatedBy().getEmail().equalsIgnoreCase(email)
+                || topic.getAdvisors().stream().anyMatch(u -> u.getEmail().equalsIgnoreCase(email))
+                || (topic.getProposedGroupId() != null && members.existsByGroup_IdAndStudent_EmailIgnoreCase(topic.getProposedGroupId(), email))
+                || assignments.findByTopic_Id(id).stream().anyMatch(a ->
+                    (a.getReviewer() != null && a.getReviewer().getEmail().equalsIgnoreCase(email))
+                    || (a.getCouncil() != null && a.getCouncil().getMembers().stream().anyMatch(m -> m.getLecturer().getEmail().equalsIgnoreCase(email))))) return topic;
+        throw new org.springframework.security.access.AccessDeniedException("Bạn không có quyền xem đề tài này");
+    }
+
+    @Transactional(readOnly = true)
+    public Topic getEditable(Long id, String email) {
+        Topic topic = get(id);
+        requireOwner(topic, email);
+        requireEditable(topic);
+        return topic;
+    }
+
+    @org.springframework.security.access.prepost.PreAuthorize("hasAnyRole('ADMIN','DEAN')")
+    public void assignAdvisors(Long id, List<Long> advisorIds) {
+        Topic topic = get(id);
+        periods.lock(topic.getRound().getId());
+        if (!assignments.findByTopic_Id(id).isEmpty()) throw new BusinessRuleException("Đã phân công chấm: không thể thay đổi GVHD");
+        topic.setAdvisors(resolveAdvisors(advisorIds));
     }
 
     /** Ràng buộc "ít nhất một, tối đa hai GVHD" + GVHD phải là giảng viên đang hoạt động. */

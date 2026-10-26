@@ -19,7 +19,7 @@ public class StudentGroup {
     @Column(name = "round_id", nullable = false)
     private Long roundId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "leader_id")
     private UserAccount leader;
 

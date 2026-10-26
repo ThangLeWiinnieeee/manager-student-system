@@ -14,8 +14,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod;
-import vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriodService;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistration;
+import vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService;
 import vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistration;
 import vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationRepository;
 import vn.edu.fit.topicmanagement.studentgroup.GroupTopicRegistrationStatus;
@@ -29,15 +29,17 @@ import vn.edu.fit.topicmanagement.user.UserAccountService;
 class CouncilServiceTest {
 
     @Mock CouncilRepository councils;
+    @Mock vn.edu.fit.topicmanagement.evaluation.EvaluationRepository evaluations;
+    @Mock vn.edu.fit.topicmanagement.result.TopicFinalResultRepository results;
     @Mock CouncilMemberRepository members;
     @Mock TopicAssignmentRepository assignments;
-    @Mock RegistrationPeriodService periods;
+    @Mock CourseRegistrationService periods;
     @Mock TopicService topics;
     @Mock UserAccountService users;
     @Mock GroupTopicRegistrationRepository groupRegistrations;
 
     private CouncilService service;
-    private RegistrationPeriod round;
+    private CourseRegistration round;
     private Council council;
     private UserAccount advisorLec;
     private UserAccount otherLec;
@@ -45,11 +47,13 @@ class CouncilServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new CouncilService(councils, members, assignments, periods, topics, users, groupRegistrations);
+        service = new CouncilService(councils, members, assignments, periods, topics, users, groupRegistrations, evaluations, results);
 
-        round = new RegistrationPeriod();
+        round = new CourseRegistration();
+        round.setPeriod(new vn.edu.fit.topicmanagement.registrationperiod.RegistrationPeriod());
         round.setId(1L);
-        round.setName("Đợt KLTN 2026");
+        round.getPeriod().setType(vn.edu.fit.topicmanagement.registrationperiod.RoundType.MON_HOC);
+        round.setCourseName("Đợt KLTN 2026");
 
         council = new Council();
         council.setName("Hội đồng 01");
@@ -105,42 +109,49 @@ class CouncilServiceTest {
 
     @Test
     void assignReviewer_advisorCannotBeReviewer() {
-        when(topics.get(10L)).thenReturn(topic);
 
         GroupTopicRegistration reg = new GroupTopicRegistration();
         reg.setStatus(GroupTopicRegistrationStatus.APPROVED);
-        when(groupRegistrations.findByTopic_Id(10L)).thenReturn(List.of(reg));
-        when(assignments.findByTopic_Id(10L)).thenReturn(Optional.empty());
+        reg.setTopic(topic);
+        org.springframework.test.util.ReflectionTestUtils.setField(reg, "id", 10L);
+        when(groupRegistrations.findRoundIdById(10L)).thenReturn(Optional.of(1L));
+        when(groupRegistrations.findById(10L)).thenReturn(Optional.of(reg));
+        when(assignments.findByRegistration_Id(10L)).thenReturn(Optional.empty());
         when(users.get(advisorLec.getId())).thenReturn(advisorLec);
 
         TopicAssignmentForm form = new TopicAssignmentForm();
-        form.setTopicId(10L);
+        form.setRegistrationId(10L);
         form.setReviewerId(advisorLec.getId());
-
         BusinessRuleException ex = assertThrows(BusinessRuleException.class, () -> service.assignTopic(form));
         assertTrue(ex.getMessage().contains("Giảng viên hướng dẫn không được làm phản biện"));
     }
 
     @Test
     void assignCouncil_cannotAssignIfCouncilContainsAdvisor() {
-        when(topics.get(10L)).thenReturn(topic);
+        round.getPeriod().setType(vn.edu.fit.topicmanagement.registrationperiod.RoundType.NCKH);
 
         GroupTopicRegistration reg = new GroupTopicRegistration();
         reg.setStatus(GroupTopicRegistrationStatus.APPROVED);
-        when(groupRegistrations.findByTopic_Id(10L)).thenReturn(List.of(reg));
-        when(assignments.findByTopic_Id(10L)).thenReturn(Optional.empty());
+        reg.setTopic(topic);
+        org.springframework.test.util.ReflectionTestUtils.setField(reg, "id", 10L);
+        when(groupRegistrations.findRoundIdById(10L)).thenReturn(Optional.of(1L));
+        when(groupRegistrations.findById(10L)).thenReturn(Optional.of(reg));
+        when(assignments.findByRegistration_Id(10L)).thenReturn(Optional.empty());
 
         // Hội đồng có chứa advisorLec
         CouncilMember cm = new CouncilMember(council, advisorLec, CouncilRole.MEMBER);
-        council.setMembers(List.of(cm));
+        var president = new UserAccount(); president.setId(4L); president.setRole(Role.LECTURER); president.setEnabled(true);
+        var secretary = new UserAccount(); secretary.setId(5L); secretary.setRole(Role.LECTURER); secretary.setEnabled(true);
+        council.setMembers(List.of(cm, new CouncilMember(council, president, CouncilRole.PRESIDENT), new CouncilMember(council, secretary, CouncilRole.SECRETARY)));
+        when(members.findByCouncil_IdOrderByRoleAsc(council.getId())).thenReturn(council.getMembers());
 
         when(councils.findById(1L)).thenReturn(Optional.of(council));
 
         TopicAssignmentForm form = new TopicAssignmentForm();
-        form.setTopicId(10L);
+        form.setRegistrationId(10L);
         form.setCouncilId(1L);
 
         BusinessRuleException ex = assertThrows(BusinessRuleException.class, () -> service.assignTopic(form));
-        assertTrue(ex.getMessage().contains("trong hội đồng là GVHD của đề tài này"));
+        assertTrue(ex.getMessage().contains("Thành viên hội đồng không được là GVHD"));
     }
 }

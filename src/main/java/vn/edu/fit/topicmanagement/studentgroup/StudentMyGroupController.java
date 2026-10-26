@@ -28,19 +28,35 @@ public class StudentMyGroupController {
 
     private final StudentGroupService groups;
     private final GroupTopicRegistrationService registrations;
+    private final vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService periods;
 
 
     public StudentMyGroupController(
             StudentGroupService groups,
-            GroupTopicRegistrationService registrations) {
+            GroupTopicRegistrationService registrations,
+            vn.edu.fit.topicmanagement.registrationperiod.CourseRegistrationService periods) {
 
         this.groups = groups;
         this.registrations = registrations;
+        this.periods = periods;
     }
 
 
+    @PostMapping("/join")
+    public String join(@RequestParam String code, RedirectAttributes redirect) {
+        try {
+            var course = periods.join(code);
+            redirect.addFlashAttribute("success", "Đã tham gia lớp " + course.getCourseLabel() + ". Bạn có thể tạo nhóm hoặc nhận và xác nhận lời mời vào nhóm.");
+        } catch (BusinessRuleException ex) {
+            redirect.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/student/my-groups";
+    }
+
     @GetMapping
     public String index(Model model) {
+        model.addAttribute("joinedCourses", periods.findJoinedCourses());
+        model.addAttribute("invitations", groups.findMyInvitations());
 
         model.addAttribute(
                 "myGroups",
@@ -110,11 +126,14 @@ public class StudentMyGroupController {
             Model model) {
 
         StudentGroup group = groups.getMyGroup(id);
+        model.addAttribute("round", periods.get(group.getRoundId()));
 
         var memberList = groups.getMyGroupMembers(id);
 
         model.addAttribute("group", group);
         model.addAttribute("members", memberList);
+        model.addAttribute("invitations", groups.findInvitations(id));
+        model.addAttribute("membershipOpen", groups.isMembershipOpen(id));
         model.addAttribute("memberCount", memberList.size());
 
         model.addAttribute(
@@ -136,7 +155,7 @@ public class StudentMyGroupController {
 
             redirectAttributes.addFlashAttribute(
                     "success",
-                    "Thêm thành viên thành công");
+                    "Đã gửi lời mời. Sinh viên cần xác nhận tại Nhóm của tôi.");
 
         } catch (BusinessRuleException ex) {
 
@@ -173,6 +192,22 @@ public class StudentMyGroupController {
     }
 
 
+    @PostMapping("/{id}/invitations/respond")
+    public String respond(@PathVariable Long id, @RequestParam boolean accept, RedirectAttributes redirect) {
+        try {
+            groups.respondToInvitation(id, accept);
+            redirect.addFlashAttribute("success", accept ? "Đã tham gia nhóm" : "Đã từ chối lời mời");
+        } catch (BusinessRuleException ex) { redirect.addFlashAttribute("error", ex.getMessage()); }
+        return "redirect:/student/my-groups";
+    }
+
+    @PostMapping("/{id}/invitations/{studentId}/cancel")
+    public String cancelInvitation(@PathVariable Long id, @PathVariable Long studentId, RedirectAttributes redirect) {
+        groups.cancelInvitation(id, studentId);
+        redirect.addFlashAttribute("success", "Đã thu hồi lời mời");
+        return "redirect:/student/my-groups/" + id;
+    }
+
     @GetMapping("/{id}/topics")
     public String chooseTopic(
             @PathVariable Long id,
@@ -180,6 +215,8 @@ public class StudentMyGroupController {
             Model model) {
 
         StudentGroup group = groups.getMyGroup(id);
+        model.addAttribute("round", periods.get(group.getRoundId()));
+        if (!model.containsAttribute("proposalForm")) model.addAttribute("proposalForm", new ProposalForm());
 
         model.addAttribute("group", group);
 
@@ -211,7 +248,7 @@ public class StudentMyGroupController {
 
             redirectAttributes.addFlashAttribute(
                     "success",
-                    "Đăng ký đề tài thành công. Vui lòng chờ Trưởng khoa xét duyệt.");
+                    "Đăng ký thành công. Nhóm đã nhận đề tài.");
 
         } catch (BusinessRuleException ex) {
 
@@ -221,6 +258,19 @@ public class StudentMyGroupController {
         }
 
         return "redirect:/student/my-groups/" + id + "/topics";
+    }
+
+    @PostMapping("/{id}/topics/propose")
+    public String propose(@PathVariable Long id, @Valid @ModelAttribute("proposalForm") ProposalForm form,
+            BindingResult binding, Model model, RedirectAttributes redirect) {
+        if (!binding.hasErrors()) {
+            try {
+                registrations.propose(id, form);
+                redirect.addFlashAttribute("success", "Đã gửi nội dung đề xuất cho khoa xét duyệt");
+                return "redirect:/student/my-groups/" + id + "/topics";
+            } catch (BusinessRuleException ex) { binding.reject("proposal.invalid", ex.getMessage()); }
+        }
+        return chooseTopic(id, 0, model);
     }
 
 

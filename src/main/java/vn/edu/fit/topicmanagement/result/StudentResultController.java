@@ -20,8 +20,8 @@ public class StudentResultController {
 
     @GetMapping
     public String myResult(Principal principal, Model model) {
-        ResultService.StudentResultView view = results.getMyStudentResult(principal.getName());
-        model.addAttribute("view", view);
+        var views = results.getMyStudentResults(principal.getName());
+        model.addAttribute("views", views);
         return "result/student-result";
     }
 }

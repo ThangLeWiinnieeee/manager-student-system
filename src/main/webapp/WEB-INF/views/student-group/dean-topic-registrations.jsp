@@ -95,7 +95,7 @@
 
                         <td>
                             <strong>
-                                <c:out value="${registration.topic.title}"/>
+                                <a href="<c:url value='/topics/${registration.topic.id}'/>"><c:out value="${registration.topic.title}"/></a>
                             </strong>
                         </td>
 

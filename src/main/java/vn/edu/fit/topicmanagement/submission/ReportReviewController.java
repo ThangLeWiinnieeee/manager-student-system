@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
 @RequestMapping("/review/submissions")
-@PreAuthorize("hasAnyRole('DEAN', 'LECTURER')")
+@PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
 public class ReportReviewController {
 
     private final ReportReviewService reviews;

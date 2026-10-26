@@ -6,7 +6,7 @@
 <div class="page-heading">
   <div>
     <h1>Chấm điểm & Đánh giá đề tài</h1>
-    <p>Danh sách các đề tài bạn được phân công làm Giảng viên phản biện hoặc Thành viên hội đồng chấm.</p>
+    <p>Danh sách nhóm được phân công cho bạn chấm môn học, hỗ trợ TLCN, phản biện hoặc nghiệm thu/bảo vệ.</p>
   </div>
 </div>
 
@@ -26,10 +26,10 @@
         <tr>
           <td>
             <a href="<c:url value='/topics/${it.topic.id}'/>" style="font-weight: 600; color: #1d4ed8; text-decoration: none;">
-              <c:out value="${it.topic.title}" />
+              <c:out value="${it.registration.group.name}"/> — <c:out value="${it.topic.title}" />
             </a>
             <div style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">
-              Chuyên ngành: <c:out value="${it.topic.major.name}" default="Không giới hạn" />
+              Bộ môn: <c:out value="${it.topic.department.name}" default="Không giới hạn" />
             </div>
           </td>
           <td>
@@ -52,7 +52,7 @@
             </c:choose>
           </td>
           <td class="actions">
-            <a class="button primary" href="<c:url value='/lecturer/evaluations/topic/${it.topic.id}'/>">
+            <a class="button primary" href="<c:url value='/lecturer/evaluations/registration/${it.registration.id}'/>">
               <c:out value="${it.status == 'SUBMITTED' ? 'Xem phiếu chấm' : 'Vào chấm điểm'}" />
             </a>
           </td>
@@ -61,7 +61,7 @@
       <c:if test="${empty items}">
         <tr>
           <td colspan="5" class="empty">
-            Hiện tại bạn chưa được phân công phản biện hoặc chấm hội đồng cho đề tài nào.
+            Hiện tại bạn chưa được phân công đánh giá nhóm nào.
           </td>
         </tr>
       </c:if>

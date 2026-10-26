@@ -1,7 +1,8 @@
 package vn.edu.fit.topicmanagement.registrationperiod;
 
-import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
@@ -11,80 +12,63 @@ import vn.edu.fit.topicmanagement.common.exception.ResourceNotFoundException;
 @Transactional
 public class RegistrationPeriodService {
     private final RegistrationPeriodRepository periods;
-
-    public RegistrationPeriodService(RegistrationPeriodRepository periods) {
+    private final CourseRegistrationRepository courses;
+    public RegistrationPeriodService(RegistrationPeriodRepository periods, CourseRegistrationRepository courses) {
         this.periods = periods;
+        this.courses = courses;
     }
-
     @Transactional(readOnly = true)
-    public List<RegistrationPeriod> findAll() {
-        return periods.findAllByOrderByGvStartDesc();
-    }
-
+    public List<RegistrationPeriod> findAll() { return periods.findAllByOrderByGvStartDesc(); }
     @Transactional(readOnly = true)
     public RegistrationPeriod get(Long id) {
-        return periods.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đợt đăng ký"));
+        return periods.findById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đợt đăng ký"));
     }
-
+    public RegistrationPeriod lock(Long id) {
+        return periods.findLockedById(id).orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đợt đăng ký"));
+    }
+    @PreAuthorize("hasAnyRole('ADMIN','DEAN')")
     public RegistrationPeriod create(RegistrationPeriodForm form) {
         validate(form);
         RegistrationPeriod period = new RegistrationPeriod();
         apply(period, form);
         return periods.save(period);
     }
-
+    @PreAuthorize("hasAnyRole('ADMIN','DEAN')")
     public RegistrationPeriod update(Long id, RegistrationPeriodForm form) {
-        RegistrationPeriod period = get(id);
+        RegistrationPeriod period = lock(id);
         validate(form);
+        if (period.getType() != form.getType() && courses.existsByPeriod_Id(id))
+            throw new BusinessRuleException("Đợt đã có môn/lớp: không thể đổi loại đợt");
         apply(period, form);
         return period;
     }
-
-    @Transactional(readOnly = true)
+    @PreAuthorize("hasAnyRole('ADMIN','DEAN')")
+    public void delete(Long id) {
+        RegistrationPeriod period = lock(id);
+        if (period.isEnded()) throw new BusinessRuleException("Không thể xóa đợt đăng ký đã kết thúc");
+        if (courses.existsByPeriod_Id(id)) throw new BusinessRuleException("Đợt đã có môn/lớp đăng ký, không thể xóa");
+        periods.delete(period);
+        periods.flush();
+    }
     public RegistrationPeriodForm toForm(RegistrationPeriod period) {
         RegistrationPeriodForm form = new RegistrationPeriodForm();
-        form.setName(period.getName());
         form.setType(period.getType());
-        form.setGvStart(period.getGvStart());
-        form.setGvEnd(period.getGvEnd());
-        form.setSvStart(period.getSvStart());
-        form.setSvEnd(period.getSvEnd());
-        form.setGvpbDeadline(period.getGvpbDeadline());
-        form.setCouncilReportDate(period.getCouncilReportDate());
+        form.setGvStart(period.getGvStart()); form.setGvEnd(period.getGvEnd());
+        form.setSvStart(period.getSvStart()); form.setSvEnd(period.getSvEnd());
+        form.setGvpbDeadline(period.getGvpbDeadline()); form.setCouncilReportDate(period.getCouncilReportDate());
         return form;
     }
-
-    /**
-     * Chặn đăng ký đề tài của giảng viên ngoài thời gian quy định.
-     * TopicService gọi hàm này khi GV gửi đề tài duyệt; TV3 sẽ dùng biến thể SV tương tự.
-     */
-    public void assertGvWindowOpen(Long id) {
-        RegistrationPeriod period = get(id);
-        if (!period.isGvWindowOpen(LocalDateTime.now())) {
-            throw new BusinessRuleException(
-                    "Ngoài thời gian đăng ký đề tài của giảng viên (" + period.getGvStartText()
-                            + " - " + period.getGvEndText() + ")");
-        }
+    private void apply(RegistrationPeriod period, RegistrationPeriodForm form) {
+        period.setName(form.getType().getDisplayName() + " — " + form.getGvStart().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+        period.setType(form.getType());
+        period.setGvStart(form.getGvStart()); period.setGvEnd(form.getGvEnd());
+        period.setSvStart(form.getSvStart()); period.setSvEnd(form.getSvEnd());
+        period.setGvpbDeadline(form.getGvpbDeadline()); period.setCouncilReportDate(form.getCouncilReportDate());
     }
-
-    /** Chặn đăng ký đề tài của nhóm sinh viên ngoài thời gian quy định (TV3 dùng). */
-    public void assertSvWindowOpen(Long id) {
-        RegistrationPeriod period = get(id);
-        if (!period.isSvWindowOpen(LocalDateTime.now())) {
-            throw new BusinessRuleException(
-                    "Ngoài thời gian đăng ký đề tài của sinh viên (" + period.getSvStartText()
-                            + " - " + period.getSvEndText() + ")");
-        }
-    }
-
-    /**
-     * Kiểm tra tính hợp lệ của các mốc thời gian theo loại đợt:
-     * - Hai giai đoạn GV/SV phải theo đúng thứ tự.
-     * - Hạn GVPB nộp điểm: bắt buộc và chỉ cho phép với TLCN/KLTN.
-     * - Ngày báo cáo hội đồng: bắt buộc và chỉ cho phép với KLTN.
-     */
     private void validate(RegistrationPeriodForm form) {
+        if (form.getType() == null || form.getGvStart() == null || form.getGvEnd() == null
+                || form.getSvStart() == null || form.getSvEnd() == null)
+            throw new BusinessRuleException("Cần loại đợt và đầy đủ thời gian đăng ký GV/SV");
         String error = null;
         if (!form.getGvStart().isBefore(form.getGvEnd())) {
             error = "Thời gian bắt đầu đăng ký của giảng viên phải trước thời gian kết thúc";
@@ -111,14 +95,4 @@ public class RegistrationPeriodService {
         }
     }
 
-    private static void apply(RegistrationPeriod period, RegistrationPeriodForm form) {
-        period.setName(form.getName().trim());
-        period.setType(form.getType());
-        period.setGvStart(form.getGvStart());
-        period.setGvEnd(form.getGvEnd());
-        period.setSvStart(form.getSvStart());
-        period.setSvEnd(form.getSvEnd());
-        period.setGvpbDeadline(form.getGvpbDeadline());
-        period.setCouncilReportDate(form.getCouncilReportDate());
-    }
 }

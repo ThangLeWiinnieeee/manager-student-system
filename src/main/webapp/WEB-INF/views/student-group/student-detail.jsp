@@ -31,8 +31,8 @@
             Nhóm:
             <c:out value="${group.name}"/>
 
-            | Đợt đăng ký:
-            <c:out value="${group.roundId}"/>
+            | Môn/lớp đăng ký:
+            <c:out value="${round.courseLabel}"/>
         </p>
     </div>
 
@@ -118,8 +118,8 @@
 
 
     <p>
-        <strong>Đợt đăng ký:</strong>
-        <c:out value="${group.roundId}"/>
+        <strong>Môn/lớp đăng ký:</strong>
+        <c:out value="${round.courseLabel}"/>
     </p>
 
 
@@ -154,19 +154,19 @@
 <%-- CHI NHOM TRUONG MOI THAY FORM NAY          --%>
 <%-- ========================================= --%>
 
-<c:if test="${isLeader}">
+<c:if test="${isLeader and membershipOpen}">
 
     <section class="panel">
 
         <div class="panel-heading">
-            <h2>Thêm thành viên</h2>
+            <h2>Mời thành viên</h2>
         </div>
 
 
         <p>
             Nhập email của sinh viên đã có tài khoản
             trong hệ thống và chưa tham gia nhóm khác
-            trong cùng đợt đăng ký.
+            trong cùng môn/lớp đăng ký.
         </p>
 
 
@@ -200,7 +200,7 @@
                 <button type="submit"
                         class="primary">
 
-                    + Thêm thành viên
+                    + Mời thành viên
 
                 </button>
 
@@ -252,7 +252,7 @@
 
                     <th>Vai trò</th>
 
-                    <c:if test="${isLeader}">
+                    <c:if test="${isLeader and membershipOpen}">
                         <th>Thao tác</th>
                     </c:if>
 
@@ -317,7 +317,7 @@
                         <%-- NUT XOA CHI DANH CHO NHOM TRUONG   --%>
                         <%-- ================================= --%>
 
-                        <c:if test="${isLeader}">
+                        <c:if test="${isLeader and membershipOpen}">
 
                             <td class="actions">
 
@@ -409,4 +409,8 @@
 <%-- FOOTER                                    --%>
 <%-- ========================================= --%>
 
+<c:if test="${isLeader}">
+<c:set var="invitationBase" value="/student/my-groups"/>
+<%@ include file="invitations.jsp" %>
+</c:if>
 <%@ include file="../common/footer.jsp" %>

@@ -1,6 +1,7 @@
 package vn.edu.fit.topicmanagement.evaluation;
 
 public enum EvaluationType {
+    SUPPORTER("Giảng viên hỗ trợ"),
     REVIEWER("Giảng viên phản biện"),
     COUNCIL("Thành viên hội đồng");
 

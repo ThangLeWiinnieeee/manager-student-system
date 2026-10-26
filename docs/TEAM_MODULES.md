@@ -2,8 +2,8 @@
 
 | Thành viên | Java package | JSP | Migration |
 |---|---|---|---|
-| TV1 | `config`, `common`, `auth`, `dashboard`, `user`, `major` | `common`, `auth`, `profile`, `admin`, `error` | `V1__create_identity_schema.sql` |
-| TV2 | `registrationperiod`, `topic` | `registration-period`, `topic` | Bắt đầu từ `V5__...sql` (V1–V4 đã dùng) |
+| TV1 | `config`, `common`, `auth`, `dashboard`, `user`, `department` | `common`, `auth`, `profile`, `admin`, `error` | `V1__create_identity_schema.sql` |
+| TV2 | `registrationperiod`, `topic` | `registration-period`, `course-registration`, `topic` | Bắt đầu từ `V5__...sql`; V16 tách lịch chung khỏi môn/lớp |
 | TV3 | `studentgroup`, `submission` | `student-group`, `submission` | Phiên bản tiếp theo sau TV2 |
 | TV4 | `council`, `evaluation`, `result`, `notification` | Các thư mục cùng tên | Phiên bản tiếp theo sau TV3 |
 

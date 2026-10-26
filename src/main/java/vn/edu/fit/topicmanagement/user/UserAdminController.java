@@ -12,25 +12,25 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import vn.edu.fit.topicmanagement.major.MajorService;
+import vn.edu.fit.topicmanagement.department.DepartmentService;
 import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 
 @Controller
 @RequestMapping("/admin/users")
-@PreAuthorize("hasAnyRole('ADMIN', 'DEAN')")
+@PreAuthorize("hasRole('ADMIN')")
 public class UserAdminController {
     private final UserAccountService accounts;
-    private final MajorService majors;
+    private final DepartmentService departments;
 
-    public UserAdminController(UserAccountService accounts, MajorService majors) {
+    public UserAdminController(UserAccountService accounts, DepartmentService departments) {
         this.accounts = accounts;
-        this.majors = majors;
+        this.departments = departments;
     }
 
     @ModelAttribute
     void commonModel(Model model) {
         model.addAttribute("roles", Role.values());
-        model.addAttribute("majors", majors.findEnabled());
+        model.addAttribute("departments", departments.findEnabled());
     }
 
     @GetMapping

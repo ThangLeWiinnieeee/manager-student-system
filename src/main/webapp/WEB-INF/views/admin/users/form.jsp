@@ -10,7 +10,7 @@
 <div class="page-heading"><div><h1>${editing ? 'Sửa tài khoản' : 'Thêm tài khoản'}</h1><p>Cập nhật thông tin, vai trò và quyền truy cập hệ thống.</p></div><a class="button" href="<c:url value='/admin/users'/>">Về danh sách</a></div>
 <form:form modelAttribute="userForm" method="post" action="${formAction}" cssClass="form-card">
     <h2>Thông tin tài khoản</h2>
-    <p class="form-intro">Tài khoản thuộc Khoa Công nghệ thông tin. Chuyên ngành chỉ áp dụng cho sinh viên.</p>
+    <p class="form-intro">Tài khoản thuộc Khoa Công nghệ thông tin. Bộ môn chỉ áp dụng cho sinh viên.</p>
     <form:errors path="*" cssClass="alert error" element="div"/>
     <div class="form-grid">
         <div><form:label path="fullName">Họ và tên</form:label><form:input path="fullName" maxlength="150" required="required"/><form:errors path="fullName" cssClass="field-error"/></div>
@@ -28,7 +28,7 @@
             </c:choose>
             <form:errors path="role" cssClass="field-error"/>
         </div>
-        <div><form:label path="majorId">Chuyên ngành của sinh viên</form:label><form:select path="majorId"><form:option value="" label="-- Chưa chọn --"/><form:options items="${majors}" itemValue="id" itemLabel="name"/></form:select><small class="muted">Chỉ lưu cho vai trò Sinh viên. Giảng viên thuộc khoa và được chọn hướng dẫn tại đề tài.</small></div>
+        <div><form:label path="departmentId">Bộ môn của sinh viên</form:label><form:select path="departmentId"><form:option value="" label="-- Chưa chọn --"/><form:options items="${departments}" itemValue="id" itemLabel="name"/></form:select><small class="muted">Chỉ lưu cho vai trò Sinh viên. Giảng viên thuộc khoa và được chọn hướng dẫn tại đề tài.</small></div>
     </div>
     <label class="checkbox"><form:checkbox path="enabled"/> Tài khoản hoạt động</label>
     <div class="form-actions"><button class="primary" type="submit">Lưu tài khoản</button><a class="button" href="<c:url value='/admin/users'/>">Hủy</a></div>

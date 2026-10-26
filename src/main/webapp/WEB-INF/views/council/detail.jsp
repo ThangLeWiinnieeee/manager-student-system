@@ -17,7 +17,7 @@
     </c:choose>
     <h1 style="margin-top: 8px;"><c:out value="${council.name}" /></h1>
     <p>
-      Đợt: <strong><c:out value="${council.round.name}" /></strong>
+      Môn/lớp: <strong><c:out value="${council.round.name}" /></strong>
       · Địa điểm: <strong><c:out value="${empty council.location ? 'Chưa xếp phòng' : council.location}" /></strong>
       · Thời gian: <strong><c:out value="${council.reportDateText}" /></strong>
       · Trạng thái:
@@ -197,7 +197,7 @@
       <thead>
         <tr>
           <th>Tên đề tài</th>
-          <th>Chuyên ngành</th>
+          <th>Bộ môn</th>
           <th>GV Hướng dẫn</th>
           <th>GV Phản biện (GVPB)</th>
           <th>Hành động</th>
@@ -208,10 +208,10 @@
           <tr>
             <td>
               <a href="<c:url value='/topics/${ta.topic.id}'/>" style="font-weight: 600; color: #1d4ed8; text-decoration: none;">
-                <c:out value="${ta.topic.title}" />
+                <c:out value="${ta.registration.group.name}"/> — <c:out value="${ta.topic.title}" />
               </a>
             </td>
-            <td><c:out value="${ta.topic.major.name}" default="Không giới hạn" /></td>
+            <td><c:out value="${ta.topic.department.name}" default="Không giới hạn" /></td>
             <td>
               <c:forEach items="${ta.topic.advisors}" var="adv" varStatus="vs">
                 <c:out value="${adv.fullName}" /><c:if test="${not vs.last}">, </c:if>
@@ -229,9 +229,9 @@
             </td>
             <td class="actions">
               <c:if test="${pageContext.request.isUserInRole('LECTURER')}">
-                <a class="button primary" href="<c:url value='/lecturer/evaluations/topic/${ta.topic.id}'/>">Chấm điểm</a>
+                <a class="button primary" href="<c:url value='/lecturer/evaluations/registration/${ta.registration.id}'/>">Chấm điểm</a>
               </c:if>
-              <a class="button" href="<c:url value='/council/results/topic/${ta.topic.id}'/>">Xem điểm & Kết quả</a>
+              <a class="button" href="<c:url value='/council/results/registration/${ta.registration.id}'/>">Xem điểm & Kết quả</a>
             </td>
           </tr>
         </c:forEach>

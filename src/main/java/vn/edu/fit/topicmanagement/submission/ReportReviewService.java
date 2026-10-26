@@ -31,24 +31,27 @@ import vn.edu.fit.topicmanagement.user.UserAccount;
 import vn.edu.fit.topicmanagement.user.UserAccountService;
 
 @Service
-@PreAuthorize("hasAnyRole('DEAN', 'LECTURER')")
+@PreAuthorize("hasAnyRole('ADMIN', 'DEAN', 'LECTURER')")
 public class ReportReviewService {
 
     private final ReportSubmissionRepository reports;
     private final GroupTopicRegistrationRepository registrations;
     private final UserAccountService users;
     private final Path storageRoot;
+    private final vn.edu.fit.topicmanagement.council.TopicAssignmentRepository assignments;
 
     public ReportReviewService(
             ReportSubmissionRepository reports,
             GroupTopicRegistrationRepository registrations,
             UserAccountService users,
             @Value("${app.submission.storage-dir}")
-            String storageDir) {
+            String storageDir,
+            vn.edu.fit.topicmanagement.council.TopicAssignmentRepository assignments) {
 
         this.reports = reports;
         this.registrations = registrations;
         this.users = users;
+        this.assignments = assignments;
 
         this.storageRoot = Path.of(storageDir)
                 .toAbsolutePath()
@@ -87,7 +90,7 @@ public class ReportReviewService {
                 auth.getAuthorities().stream()
                         .anyMatch(a ->
                                 a.getAuthority()
-                                        .equals("ROLE_DEAN"));
+                                        .equals("ROLE_DEAN") || a.getAuthority().equals("ROLE_ADMIN"));
     }
 
     // =========================================
@@ -109,6 +112,10 @@ public class ReportReviewService {
         }
 
         // Giang vien chi xem de tai minh huong dan
+        var assignment = assignments.findByRegistration_Id(registration.getId()).orElse(null);
+        if (assignment != null && ((assignment.getReviewer() != null && assignment.getReviewer().getId().equals(user.getId()))
+                || (assignment.getCouncil() != null && assignment.getCouncil().getMembers().stream()
+                .anyMatch(m -> m.getLecturer().getId().equals(user.getId()))))) return true;
         return registration.getTopic()
                 .getAdvisors()
                 .stream()

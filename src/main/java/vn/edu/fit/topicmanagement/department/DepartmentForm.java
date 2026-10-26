@@ -1,17 +1,17 @@
-package vn.edu.fit.topicmanagement.major;
+package vn.edu.fit.topicmanagement.department;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-public class MajorForm {
-    @NotBlank(message = "Mã chuyên ngành không được để trống")
-    @Size(max = 20, message = "Mã chuyên ngành tối đa 20 ký tự")
-    @Pattern(regexp = "[A-Za-z0-9_-]+", message = "Mã chuyên ngành chỉ gồm chữ, số, gạch dưới hoặc gạch ngang")
+public class DepartmentForm {
+    @NotBlank(message = "Mã bộ môn không được để trống")
+    @Size(max = 20, message = "Mã bộ môn tối đa 20 ký tự")
+    @Pattern(regexp = "[A-Za-z0-9_-]+", message = "Mã bộ môn chỉ gồm chữ, số, gạch dưới hoặc gạch ngang")
     private String code;
 
-    @NotBlank(message = "Tên chuyên ngành không được để trống")
-    @Size(max = 150, message = "Tên chuyên ngành tối đa 150 ký tự")
+    @NotBlank(message = "Tên bộ môn không được để trống")
+    @Size(max = 150, message = "Tên bộ môn tối đa 150 ký tự")
     private String name;
 
     private boolean enabled = true;

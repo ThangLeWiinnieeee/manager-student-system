@@ -1,77 +1,53 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-  <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-    <c:set var="pageTitle" value="Quản lý đợt đăng ký" />
-    <%@ include file="../common/header.jsp" %>
-      <div class="page-heading">
-        <div>
-          <h1>Quản lý đợt đăng ký</h1>
-          <p>
-            Thiết lập các đợt đăng ký đề tài theo hai giai đoạn: giảng viên đăng ký
-            trước, sinh viên đăng ký sau.
-          </p>
-        </div>
-        <a class="button primary" href="<c:url value='/admin/registration-periods/new'/>">Thêm đợt đăng ký</a>
-      </div>
-      <div class="table-wrap" role="region" aria-label="Danh sách đợt đăng ký" tabindex="0">
-        <table aria-label="Danh sách đợt đăng ký">
-          <thead>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="pageTitle" value="Quản lý đợt đăng ký" />
+<%@ include file="../common/header.jsp" %>
+<div class="page-heading">
+    <div>
+        <h1>Quản lý đợt đăng ký</h1>
+        <p>Theo dõi các đợt đăng ký và giai đoạn hiện tại.</p>
+    </div>
+    <c:if test="${manager}"><a class="button primary" href="<c:url value='/admin/registration-periods/new'/>">Mở đợt đăng ký</a></c:if>
+</div>
+<div class="table-wrap" role="region" aria-label="Danh sách đợt đăng ký" tabindex="0">
+    <table aria-label="Danh sách đợt đăng ký">
+        <thead>
             <tr>
-              <th style="width: 80px;">Mã đợt</th>
-              <th>Tên đợt</th>
-              <th>Loại</th>
-              <th>Giai đoạn GV</th>
-              <th>Giai đoạn SV</th>
-              <th>Hạn GVPB nộp điểm</th>
-              <th>Ngày báo cáo hội đồng</th>
-              <th>Giai đoạn hiện tại</th>
-              <th>Thao tác</th>
+                <th scope="col">Tên đợt</th>
+                <th scope="col">Loại</th>
+                <th scope="col">Giai đoạn hiện tại</th>
+                <th scope="col">Thao tác</th>
             </tr>
-          </thead>
-          <tbody>
+        </thead>
+        <tbody>
             <c:forEach items="${periods}" var="period">
-              <tr>
-                <td><strong>
-                    <c:out value="${period.id}" />
-                  </strong></td>
-                <td>
-                  <c:out value="${period.name}" />
-                </td>
-                <td>
-                  <c:out value="${period.type.displayName}" />
-                </td>
-                <td>
-                  <c:out value="${period.gvStartText}" /> →
-                  <c:out value="${period.gvEndText}" />
-                </td>
-                <td>
-                  <c:out value="${period.svStartText}" /> →
-                  <c:out value="${period.svEndText}" />
-                </td>
-                <td>
-                  <c:out value="${period.gvpbDeadlineText}" />
-                </td>
-                <td>
-                  <c:out value="${period.councilReportDateText}" />
-                </td>
-                <td>
-                  <span class="badge ${period.stage == 'Đã kết thúc' ? 'inactive' : 'active'}">
-                    <c:out value="${period.stage}" />
-                  </span>
-                </td>
-                <td class="actions">
-                  <a class="button" href="<c:url value='/admin/registration-periods/${period.id}/edit'/>">Sửa</a>
-                </td>
-              </tr>
+                <tr>
+                    <td><strong><c:out value="${period.name}" /> (#<c:out value="${period.id}" />)</strong></td>
+                    <td><c:out value="${period.type.displayName}" /></td>
+                    <td>
+                        <span class="badge ${period.ended ? 'inactive' : 'active'}">
+                            <c:out value="${period.stage}" />
+                        </span>
+                    </td>
+                    <td class="actions">
+                        <a class="button" href="<c:url value='/admin/registration-periods/${period.id}'/>">Xem chi tiết</a>
+                        <c:if test="${manager}"><a class="button" href="<c:url value='/admin/registration-periods/${period.id}/edit'/>">Sửa</a>
+                        <c:if test="${not period.ended}">
+                            <form action="<c:url value='/admin/registration-periods/${period.id}/delete'/>" method="post"
+                                  class="inline-form" onsubmit="return confirm('Bạn có chắc muốn xóa đợt đăng ký này?');">
+                                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}" />
+                                <button type="submit" class="button" style="color: #dc2626;">Xóa</button>
+                            </form>
+                        </c:if>
+                        </c:if>
+                        <c:if test="${pageContext.request.isUserInRole('LECTURER') and period.gvOpen}"><a class="button primary" href="<c:url value='/course-registrations/new?periodId=${period.id}'/>">Đăng ký môn/lớp</a></c:if>
+                    </td>
+                </tr>
             </c:forEach>
             <c:if test="${empty periods}">
-              <tr>
-                <td colspan="8" class="empty">
-                  Chưa có đợt đăng ký nào. Chọn “Thêm đợt đăng ký” để tạo đợt đầu
-                  tiên.
-                </td>
-              </tr>
+                <tr><td colspan="4" class="empty">Chưa có đợt đăng ký nào.</td></tr>
             </c:if>
-          </tbody>
-        </table>
-      </div>
-      <%@ include file="../common/footer.jsp" %>
+        </tbody>
+    </table>
+</div>
+<%@ include file="../common/footer.jsp" %>

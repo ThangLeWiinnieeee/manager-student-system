@@ -15,6 +15,9 @@ import org.springframework.data.repository.query.Param;
 public interface GroupTopicRegistrationRepository
         extends JpaRepository<GroupTopicRegistration, Long> {
 
+    @Query("select r.group.roundId from GroupTopicRegistration r where r.id = :id")
+    Optional<Long> findRoundIdById(@Param("id") Long id);
+
     // Lay dang ky cua mot nhom
     Optional<GroupTopicRegistration> findByGroup_Id(
             Long groupId
@@ -36,7 +39,7 @@ public interface GroupTopicRegistrationRepository
     );
 
     // DEAN: Danh sach tat ca dang ky
-    @EntityGraph(attributePaths = {"group", "topic"})
+    @EntityGraph(type = EntityGraph.EntityGraphType.LOAD, attributePaths = {"group", "topic", "topic.advisors"})
     List<GroupTopicRegistration>
     findAllByOrderBySubmittedAtDesc();
 

@@ -17,7 +17,7 @@ import vn.edu.fit.topicmanagement.common.exception.BusinessRuleException;
 
 @Controller
 @RequestMapping("/dean/group-topic-registrations")
-@PreAuthorize("hasRole('DEAN')")
+@PreAuthorize("hasAnyRole('DEAN','ADMIN')")
 public class DeanGroupTopicRegistrationController {
 
     private final GroupTopicRegistrationService registrations;
